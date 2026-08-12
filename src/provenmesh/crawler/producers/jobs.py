@@ -57,6 +57,7 @@ class JobsProducer(BaseProducer):
     def _extract_detail_urls(self, html: str, base_url: str) -> list[str]:
         """Extract job detail URLs from listing HTML."""
         from bs4 import BeautifulSoup
+
         from provenmesh.crawler.normalization import normalize_url
 
         soup = BeautifulSoup(html, "lxml")
