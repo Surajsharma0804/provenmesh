@@ -7,7 +7,6 @@ and aggregates results into a record-level verification status.
 from __future__ import annotations
 
 from provenmesh.domain.enums import FieldVerification, VerificationStatus
-from provenmesh.domain.evidence import EvidenceRecord
 from provenmesh.grounding.date_match import verify_date_field
 from provenmesh.grounding.numeric_match import verify_numeric_field
 from provenmesh.grounding.text_match import verify_text_field
