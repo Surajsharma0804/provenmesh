@@ -77,37 +77,36 @@ class RobotsChecker:
             # Fetch robots.txt
             robots_url = f"{domain}/robots.txt"
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        robots_url,
-                        timeout=aiohttp.ClientTimeout(total=10),
-                        headers={"User-Agent": USER_AGENTS[0]},
-                    ) as response:
-                        if response.status == 200:
-                            content = await response.text()
-                            parser = RobotFileParser()
-                            parser.parse(content.splitlines())
-                            self._parsers[domain] = parser
-                            self._cache_timestamps[domain] = now
+                async with aiohttp.ClientSession() as session, session.get(
+                    robots_url,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                    headers={"User-Agent": USER_AGENTS[0]},
+                ) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        parser = RobotFileParser()
+                        parser.parse(content.splitlines())
+                        self._parsers[domain] = parser
+                        self._cache_timestamps[domain] = now
 
-                            # Log crawl-delay if present
-                            delay = parser.crawl_delay("*")
-                            if delay:
-                                logger.info(
-                                    "robots_crawl_delay_found",
-                                    domain=domain,
-                                    delay=delay,
-                                )
-
-                            return parser
-                        else:
-                            # No robots.txt or error → allow all
-                            logger.debug(
-                                "robots_txt_not_found",
+                        # Log crawl-delay if present
+                        delay = parser.crawl_delay("*")
+                        if delay:
+                            logger.info(
+                                "robots_crawl_delay_found",
                                 domain=domain,
-                                status=response.status,
+                                delay=delay,
                             )
-                            return None
+
+                        return parser
+                    else:
+                        # No robots.txt or error → allow all
+                        logger.debug(
+                            "robots_txt_not_found",
+                            domain=domain,
+                            status=response.status,
+                        )
+                        return None
 
             except Exception as e:
                 logger.warning(
@@ -130,7 +129,7 @@ _robots_checker: RobotsChecker | None = None
 
 def get_robots_checker() -> RobotsChecker:
     """Get the global robots.txt checker singleton."""
-    global _robots_checker  # noqa: PLW0603
+    global _robots_checker
     if _robots_checker is None:
         _robots_checker = RobotsChecker()
     return _robots_checker
