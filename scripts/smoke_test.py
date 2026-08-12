@@ -53,7 +53,7 @@ async def test_postgres() -> bool:
         async with engine.connect() as conn:
             result = await conn.execute(text("SELECT version()"))
             version = result.scalar()
-            assert "PostgreSQL" in version
+            assert version is not None and "PostgreSQL" in str(version)
         await engine.dispose()
         return True
     except Exception as e:
@@ -119,15 +119,21 @@ def test_grounding() -> bool:
 def test_resolver() -> bool:
     """Test entity resolution seed store."""
     try:
-        from provenmesh.resolver.seeds import SeedStore
+        from provenmesh.resolver.seeds import SeedEntity, SeedStore
 
         store = SeedStore()
-        store.add("startup_openai", "OpenAI", ["Open AI"])
-        result = store.find("OpenAI")
+        store.add_seed(SeedEntity(
+            canonical_id="startup_openai",
+            canonical_name="OpenAI",
+            normalized_name="openai",
+            record_type="STARTUP",
+            aliases=["Open AI"],
+        ))
+        result = store.exact_match("OpenAI")
         assert result is not None
         assert result.canonical_id == "startup_openai"
 
-        result = store.find("Open AI")
+        result = store.exact_match("Open AI")
         assert result is not None
         return True
     except Exception as e:
