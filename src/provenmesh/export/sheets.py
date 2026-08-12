@@ -15,11 +15,8 @@ Export rules:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Sequence
 
-from provenmesh.config.constants import SHEETS_TAB_ORDER
-from provenmesh.graph.models import EntityRecord, RelationshipRecord
+from provenmesh.graph.models import EntityRecord
 from provenmesh.graph.repository import EntityRepository
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import EXPORT_FAILURE_TOTAL, EXPORT_SUCCESS_TOTAL
@@ -164,6 +161,7 @@ class SheetsExporter:
             repo = EntityRepository(session)
             # Get all resolved entities for the log
             from sqlalchemy import select
+
             from provenmesh.graph.models import EntityRecord as ER
 
             result = await session.execute(
