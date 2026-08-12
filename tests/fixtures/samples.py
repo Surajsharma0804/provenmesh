@@ -5,7 +5,6 @@ Provides consistent test data across unit, integration, and e2e tests.
 
 from __future__ import annotations
 
-
 # ─── Sample HTML Pages ───────────────────────────────────────────
 
 STARTUP_HTML = """
