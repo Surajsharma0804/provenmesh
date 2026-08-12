@@ -32,10 +32,9 @@ async def db_session():
     except Exception:
         pytest.skip("PostgreSQL not available")
 
-    async with async_session() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+    async with async_session() as session, session.begin():
+        yield session
+        await session.rollback()
 
     await engine.dispose()
 
