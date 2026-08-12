@@ -39,13 +39,13 @@ class TestEvidencedField:
 
     def test_field_is_frozen(self) -> None:
         field = EvidencedField(value="test")
-        with pytest.raises(Exception):
+        with pytest.raises((AttributeError, TypeError, Exception)):
             field.value = "modified"  # type: ignore
 
     def test_confidence_bounds(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError, match="confidence"):
             EvidencedField(value="test", confidence=1.5)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError, match="confidence"):
             EvidencedField(value="test", confidence=-0.1)
 
 

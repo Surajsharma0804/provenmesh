@@ -104,7 +104,7 @@ class TestRelationshipExtraction:
     def test_valid_relationships(self) -> None:
         parsed = {
             "relationships": [
-                {"source": "Sam Altman", "target": "OpenAI", "type": "FOUNDED_BY", "confidence": 0.9},
+                {"source": "Sam Altman", "target": "OpenAI", "type": "FOUNDED_BY", "confidence": 0.9},  # noqa: E501
             ]
         }
         result = extract_relationships(parsed)

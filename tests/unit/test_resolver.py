@@ -147,7 +147,7 @@ class TestSeedStore:
         store = SeedStore()
         count = store.load_from_json([
             {"canonical_id": "s1", "name": "Company A", "record_type": "STARTUP"},
-            {"canonical_id": "s2", "name": "Company B", "record_type": "STARTUP", "aliases": ["B Corp"]},
+            {"canonical_id": "s2", "name": "Company B", "record_type": "STARTUP", "aliases": ["B Corp"]},  # noqa: E501
         ])
         assert count == 2
         assert store.total_seeds == 2

@@ -34,7 +34,7 @@ class TestTextGrounding:
             }
         }
         result = engine.verify_record(fields, SOURCE_TEXT)
-        assert result.verification_status in (VerificationStatus.GROUNDED, VerificationStatus.PARTIAL)
+        assert result.verification_status in (VerificationStatus.GROUNDED, VerificationStatus.PARTIAL)  # noqa: E501
         assert result.grounded_count >= 1
 
     def test_hallucinated_evidence_fails(self, engine: GroundingEngine) -> None:
