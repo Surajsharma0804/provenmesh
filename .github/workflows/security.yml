@@ -1,0 +1,87 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"  # Weekly Monday 6am UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit safety
+      - run: pip install -e ".[dev]"
+      - run: pip-audit --strict --fix --dry-run
+      - run: safety check
+
+  bandit-sast:
+    name: Static Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install bandit[toml]
+      - run: bandit -r src/provenmesh/ -c pyproject.toml -f json -o bandit-report.json || true
+      - run: bandit -r src/provenmesh/ -ll  # Fail only on medium+ severity
+
+  docker-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t provenmesh:scan .
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: provenmesh:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  env-check:
+    name: Environment File Safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify .env is gitignored
+        run: |
+          if git ls-files --cached | grep -q "^\.env$"; then
+            echo "ERROR: .env is tracked in git!"
+            exit 1
+          fi
+          echo ".env is properly gitignored"
+      - name: Verify no hardcoded secrets
+        run: |
+          if grep -rn "GEMINI_API_KEY\s*=\s*['\"]" src/ --include="*.py" | grep -v "example\|placeholder\|settings"; then
+            echo "ERROR: Possible hardcoded secret found!"
+            exit 1
+          fi
+          echo "No hardcoded secrets detected"
