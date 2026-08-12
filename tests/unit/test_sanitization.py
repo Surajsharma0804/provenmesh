@@ -48,7 +48,7 @@ class TestTextSanitization:
 
     def test_decode_html_entities(self) -> None:
         result = sanitize_text("OpenAI &amp; Anthropic &lt;AI&gt;")
-        assert "OpenAI & Anthropic <AI>" == result
+        assert result == "OpenAI & Anthropic <AI>"
 
     def test_collapse_whitespace(self) -> None:
         result = sanitize_text("Hello    World\t\tTest")
