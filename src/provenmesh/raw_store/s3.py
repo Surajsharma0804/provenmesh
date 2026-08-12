@@ -7,9 +7,9 @@ re-extraction without re-scraping if the LLM schema changes.
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import aiobotocore.session
 
