@@ -11,12 +11,8 @@ Requires: Docker Compose stack (Postgres, Redis, MinIO).
 from __future__ import annotations
 
 import hashlib
-import json
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ─── Mock HTML fixture ───────────────────────────────────────────
 MOCK_HTML = """
@@ -49,9 +45,9 @@ class TestFullPipeline:
 
     async def test_extraction_to_grounding(self):
         """Test extraction output flows correctly through grounding."""
-        from provenmesh.grounding.text_match import verify_text_field
-        from provenmesh.grounding.numeric_match import verify_numeric_field
         from provenmesh.domain.enums import FieldVerification
+        from provenmesh.grounding.numeric_match import verify_numeric_field
+        from provenmesh.grounding.text_match import verify_text_field
 
         source_text = MOCK_HTML
 
@@ -74,8 +70,8 @@ class TestFullPipeline:
 
     async def test_grounding_to_resolution(self):
         """Test grounded entity flows through resolution."""
-        from provenmesh.resolver.seeds import SeedEntity, SeedStore
         from provenmesh.resolver.normalization import normalize_entity_name
+        from provenmesh.resolver.seeds import SeedEntity, SeedStore
 
         store = SeedStore()
         store.add_seed(SeedEntity(
@@ -132,7 +128,7 @@ class TestFullPipeline:
 
     async def test_serialization_strips_internal_fields(self):
         """Export serialization must strip internal metadata."""
-        from provenmesh.export.serializers import flatten_evidenced_field, INTERNAL_FIELDS
+        from provenmesh.export.serializers import INTERNAL_FIELDS, flatten_evidenced_field
 
         # Evidence-first field should flatten
         flat = flatten_evidenced_field({"value": "OpenAI", "evidence": "...", "confidence": 0.99})
