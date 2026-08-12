@@ -10,7 +10,6 @@ are promoted to seeds automatically.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 
 from provenmesh.observability.logging import get_logger
