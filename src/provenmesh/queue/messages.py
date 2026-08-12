@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -23,7 +22,7 @@ class QueueMessage(BaseModel):
         return {"data": self.model_dump_json()}
 
     @classmethod
-    def from_stream_data(cls, data: dict[bytes | str, bytes | str]) -> "QueueMessage":
+    def from_stream_data(cls, data: dict[bytes | str, bytes | str]) -> QueueMessage:
         """Deserialize from Redis Streams field-value pairs."""
         raw = data.get(b"data") or data.get("data", b"{}")
         if isinstance(raw, bytes):
@@ -87,7 +86,7 @@ class DLQMessage(QueueMessage):
         stage: str,
         error: Exception,
         original_stream: str,
-    ) -> "DLQMessage":
+    ) -> DLQMessage:
         """Create a DLQ entry from a failed message."""
         return cls(
             correlation_id=original.correlation_id,
