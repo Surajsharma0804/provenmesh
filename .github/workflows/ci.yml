@@ -1,0 +1,89 @@
+name: ProvenMesh CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff mypy
+      - run: ruff check src/ tests/
+      - run: ruff format --check src/ tests/
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/unit/ -v --tb=short --cov=src/provenmesh --cov-report=xml
+      - uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/contract/ -v --tb=short
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: provenmesh
+          POSTGRES_PASSWORD: provenmesh_dev
+          POSTGRES_DB: provenmesh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U provenmesh"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e ".[dev]"
+      - run: alembic upgrade head
+        env:
+          POSTGRES_DSN: postgresql+asyncpg://provenmesh:provenmesh_dev@localhost:5432/provenmesh
+          REDIS_URL: redis://localhost:6379/0
+      - run: pytest tests/integration/ -v --tb=short
+        env:
+          POSTGRES_DSN: postgresql+asyncpg://provenmesh:provenmesh_dev@localhost:5432/provenmesh
+          REDIS_URL: redis://localhost:6379/0
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t provenmesh:test .
