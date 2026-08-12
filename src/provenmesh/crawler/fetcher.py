@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import random
-import time
 
 from provenmesh.config.settings import get_settings
 from provenmesh.crawler.browser import fetch_with_browser
