@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 from provenmesh.observability.logging import (
     get_correlation_id,
