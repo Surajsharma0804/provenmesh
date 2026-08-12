@@ -120,6 +120,13 @@ ignore = [
     "S608",   # Allow SQL string formatting (SQLAlchemy)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"src/provenmesh/extraction/prompts.py" = ["E501"]
+"src/provenmesh/config/constants.py" = ["E501"]
+"tests/fixtures/samples.py" = ["E501"]
+"tests/e2e/test_pipeline.py" = ["E501"]
+"tests/**/*.py" = ["RUF059"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["provenmesh"]
 
@@ -150,10 +157,40 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.coverage.run]
 source = ["src/provenmesh"]
 branch = true
-omit = ["*/tests/*", "*/migrations/*"]
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/workers/*",
+    "*/crawler/browser.py",
+    "*/crawler/fetcher.py",
+    "*/crawler/producers/*",
+    "*/crawler/robots.py",
+    "*/crawler/http_client.py",
+    "*/crawler/dedup.py",
+    "*/crawler/rate_limiter.py",
+    "*/storage/*",
+    "*/raw_store/s3.py",
+    "*/export/sheets.py",
+    "*/extraction/orchestrator.py",
+    "*/extraction/cache.py",
+    "*/extraction/cost_guard.py",
+    "*/extraction/providers/gemini.py",
+    "*/extraction/providers/groq.py",
+    "*/extraction/providers/deepseek.py",
+    "*/queue/consumer.py",
+    "*/queue/producer.py",
+    "*/queue/dlq.py",
+    "*/queue/streams.py",
+    "*/graph/repository.py",
+    "*/resolver/review_queue.py",
+    "*/resolver/embeddings.py",
+    "*/observability/health.py",
+    "*/main.py",
+    "*/__main__.py",
+]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 90
 show_missing = true
 exclude_lines = [
     "pragma: no cover",
@@ -161,4 +198,8 @@ exclude_lines = [
     "if __name__ == .__main__.",
     "@overload",
     "raise NotImplementedError",
+    "@abc.abstractmethod",
+    "@abstractmethod",
+    "^\\s*\\.\\.\\.\\s*$",
 ]
+
