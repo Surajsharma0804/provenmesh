@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections import defaultdict
 
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger
@@ -135,7 +134,7 @@ _rate_limiter: DomainRateLimiter | None = None
 
 def get_rate_limiter() -> DomainRateLimiter:
     """Get the global rate limiter singleton."""
-    global _rate_limiter  # noqa: PLW0603
+    global _rate_limiter
     if _rate_limiter is None:
         _rate_limiter = DomainRateLimiter()
     return _rate_limiter
