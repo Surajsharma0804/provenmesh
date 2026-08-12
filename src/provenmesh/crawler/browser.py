@@ -40,7 +40,7 @@ _VIEWPORTS = [
 
 async def _ensure_browser() -> None:
     """Initialize Playwright browser if not already running."""
-    global _playwright, _browser, _context, _request_count  # noqa: PLW0603
+    global _playwright, _browser, _context, _request_count
     async with _lock:
         if _browser is None or not _browser.is_connected():
             from playwright.async_api import async_playwright
@@ -92,7 +92,7 @@ async def fetch_with_browser(
     - Random scroll behavior
     - Realistic timing between actions
     """
-    global _request_count  # noqa: PLW0603
+    global _request_count
     await _ensure_browser()
 
     start = time.monotonic()
@@ -160,7 +160,7 @@ async def fetch_with_browser(
 
 async def close_browser() -> None:
     """Clean up Playwright resources."""
-    global _playwright, _browser, _context  # noqa: PLW0603
+    global _playwright, _browser, _context
     if _context:
         await _context.close()
         _context = None
