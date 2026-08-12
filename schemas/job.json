@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://provenmesh.dev/schemas/job.json",
+  "title": "Job Entity",
+  "description": "Canonical schema for AI job listing entities (PDF §8.1)",
+  "type": "object",
+  "required": ["schemaVersion", "recordType", "source", "content"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "recordType": { "type": "string", "const": "JOB" },
+    "source": { "$ref": "startup.json#/$defs/source" },
+    "content": {
+      "type": "object",
+      "required": ["entityName"],
+      "properties": {
+        "entityName": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "title": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "company": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "location": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "remotePolicy": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "employmentType": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "seniorityLevel": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "salaryMin": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "salaryMax": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "salaryCurrency": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "description": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "postedDate": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "expiryDate": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "applicationUrl": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "department": { "$ref": "startup.json#/$defs/evidenced_string" }
+      }
+    },
+    "metadata": { "$ref": "startup.json#/$defs/metadata" }
+  }
+}

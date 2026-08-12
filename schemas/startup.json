@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://provenmesh.dev/schemas/startup.json",
+  "title": "Startup Entity",
+  "description": "Canonical schema for AI startup entities (PDF §8.1)",
+  "type": "object",
+  "required": ["schemaVersion", "recordType", "source", "content"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "recordType": {
+      "type": "string",
+      "const": "STARTUP"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "content": {
+      "type": "object",
+      "required": ["entityName"],
+      "properties": {
+        "entityName": { "$ref": "#/$defs/evidenced_string" },
+        "description": { "$ref": "#/$defs/evidenced_string" },
+        "foundedDate": { "$ref": "#/$defs/evidenced_string" },
+        "founders": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenced_string" }
+        },
+        "headquarters": { "$ref": "#/$defs/evidenced_string" },
+        "industry": { "$ref": "#/$defs/evidenced_string" },
+        "subIndustry": { "$ref": "#/$defs/evidenced_string" },
+        "fundingTotal": { "$ref": "#/$defs/evidenced_string" },
+        "lastFundingRound": { "$ref": "#/$defs/evidenced_string" },
+        "lastFundingDate": { "$ref": "#/$defs/evidenced_string" },
+        "investors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenced_string" }
+        },
+        "employeeCount": { "$ref": "#/$defs/evidenced_string" },
+        "website": { "$ref": "#/$defs/evidenced_string" },
+        "linkedinUrl": { "$ref": "#/$defs/evidenced_string" },
+        "twitterUrl": { "$ref": "#/$defs/evidenced_string" },
+        "products": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenced_string" }
+        },
+        "techStack": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenced_string" }
+        },
+        "keyPeople": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "$ref": "#/$defs/evidenced_string" },
+              "role": { "$ref": "#/$defs/evidenced_string" }
+            }
+          }
+        }
+      }
+    },
+    "metadata": { "$ref": "#/$defs/metadata" }
+  },
+  "$defs": {
+    "evidenced_string": {
+      "type": "object",
+      "required": ["value"],
+      "properties": {
+        "value": { "type": ["string", "number", "null"] },
+        "evidence": { "type": "string", "description": "Source text span supporting this value" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["url", "fetchedAt"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "sourceName": { "type": "string" },
+        "fetchedAt": { "type": "string", "format": "date-time" },
+        "contentHash": { "type": "string" },
+        "fetchTier": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "contentHash": { "type": "string" },
+        "dateConfidence": { "type": "string", "enum": ["strict", "heuristic"] },
+        "verificationStatus": { "type": "string", "enum": ["grounded", "partial", "unverified", "rejected"] },
+        "canonicalId": { "type": "string" },
+        "correlationId": { "type": "string" },
+        "processingState": { "type": "string" },
+        "extractedAt": { "type": "string", "format": "date-time" },
+        "resolvedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://provenmesh.dev/schemas/news_signal.json",
+  "title": "News Signal",
+  "description": "News signal schema — not a first-class entity (PDF §2 clarification: 4 canonical entities + News as signal)",
+  "type": "object",
+  "required": ["schemaVersion", "recordType", "source", "content"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "recordType": { "type": "string", "const": "NEWS_SIGNAL" },
+    "source": { "$ref": "startup.json#/$defs/source" },
+    "content": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "summary": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "publishedDate": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "author": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "publisher": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "category": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "mentionedEntities": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" },
+          "description": "Startups, products, people mentioned in this article"
+        },
+        "sentiment": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "keyTopics": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "originalUrl": { "$ref": "startup.json#/$defs/evidenced_string" }
+      }
+    },
+    "metadata": { "$ref": "startup.json#/$defs/metadata" }
+  }
+}

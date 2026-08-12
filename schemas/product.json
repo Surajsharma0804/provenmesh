@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://provenmesh.dev/schemas/product.json",
+  "title": "Product Entity",
+  "description": "Canonical schema for AI product entities (PDF §8.1)",
+  "type": "object",
+  "required": ["schemaVersion", "recordType", "source", "content"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "recordType": { "type": "string", "const": "PRODUCT" },
+    "source": { "$ref": "startup.json#/$defs/source" },
+    "content": {
+      "type": "object",
+      "required": ["entityName"],
+      "properties": {
+        "entityName": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "description": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "company": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "category": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "subCategory": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "launchDate": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "pricing": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "pricingModel": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "features": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "platforms": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "techStack": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "website": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "githubUrl": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "rating": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "userCount": { "$ref": "startup.json#/$defs/evidenced_string" }
+      }
+    },
+    "metadata": { "$ref": "startup.json#/$defs/metadata" }
+  }
+}

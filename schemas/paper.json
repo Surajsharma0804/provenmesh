@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://provenmesh.dev/schemas/paper.json",
+  "title": "Research Paper Entity",
+  "description": "Canonical schema for AI research paper entities (PDF §8.1, §3.3)",
+  "type": "object",
+  "required": ["schemaVersion", "recordType", "source", "content"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "recordType": { "type": "string", "const": "PAPER" },
+    "source": { "$ref": "startup.json#/$defs/source" },
+    "content": {
+      "type": "object",
+      "required": ["entityName"],
+      "properties": {
+        "entityName": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "title": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "abstract": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "authors": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "publishedDate": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "journal": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "conference": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "arxivId": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "doi": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "pdfUrl": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "githubUrl": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "githubStars": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "citations": { "$ref": "startup.json#/$defs/evidenced_string" },
+        "categories": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "keywords": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "affiliations": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        },
+        "relatedStartups": {
+          "type": "array",
+          "items": { "$ref": "startup.json#/$defs/evidenced_string" }
+        }
+      }
+    },
+    "metadata": { "$ref": "startup.json#/$defs/metadata" }
+  }
+}
