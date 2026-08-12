@@ -1,0 +1,75 @@
+# ProvenMesh — Quality & Operational Thresholds
+
+# ─── Grounding (PDF §5.3) ───────────────────────────────────────
+grounding:
+  text_fuzzy_ratio: 90             # fuzz.partial_ratio threshold
+  number_tolerance_pct: 1.0        # Allow 1% variance for numbers
+  date_tolerance_days: 1           # Allow 1 day tolerance
+  url_canonicalize: true           # Normalize before comparing
+  min_evidence_length: 10          # Minimum evidence span chars
+  grounding_failure_alert_pct: 5   # Alert if failures > 5% (PDF §10.1)
+
+# ─── Entity Resolution (PDF §6) ─────────────────────────────────
+resolution:
+  fuzzy_threshold: 85              # RapidFuzz token_sort_ratio (PDF §6.2)
+  embedding_accept: 0.88           # Cosine similarity accept (PDF §6.2)
+  review_band_low: 0.75            # Below this: no match (PDF §6.3)
+  review_band_high: 0.88           # 0.75–0.88 → needs_review
+  exact_match_boost: 1.0           # Confidence for exact seed match
+  normalized_match_boost: 0.98     # Confidence for normalized match
+  max_candidates: 20               # Max candidates per entity
+  auto_promote_threshold: 0.95     # Auto-promote to seed after N sources
+  auto_promote_min_sources: 3      # Min independent sources to promote
+
+# ─── Deduplication (PDF §4.3) ───────────────────────────────────
+dedup:
+  ttl_seconds: 2592000             # 30-day rolling TTL
+  hash_algorithm: sha256
+  key_pattern: "dedup:{source}:{date_bucket}"
+  date_bucket_format: "%Y-%m-%d"
+
+# ─── Cost Governance (PDF §5.4) ─────────────────────────────────
+cost:
+  daily_token_budget: 5000000
+  warning_pct: 80                  # Alert at 80%
+  cost_saving_pct: 90              # Switch to cheapest model at 90%
+  halt_pct: 100                    # Halt extraction at 100%
+  check_interval_calls: 50         # Check budget every N calls
+  cache_ttl_seconds: 86400         # 24-hour LLM response cache
+
+# ─── Backpressure ───────────────────────────────────────────────
+backpressure:
+  high_water_mark: 10000           # Pause producers above this queue depth
+  low_water_mark: 5000             # Resume producers below this
+  max_delay_seconds: 30            # Max backpressure sleep
+  check_interval_seconds: 5
+
+# ─── Retry ──────────────────────────────────────────────────────
+retry:
+  max_attempts: 5
+  base_delay_seconds: 1.0
+  max_delay_seconds: 60.0
+  exponential_base: 2
+  jitter_max_seconds: 1.5
+
+# ─── Worker Lifecycle ───────────────────────────────────────────
+worker:
+  max_items_before_recycle: 1000   # Self-restart after N items
+  health_check_port: 8080
+  shutdown_timeout_seconds: 30
+  poison_message_max_idle_ms: 300000  # 5 min max processing time
+
+# ─── Export ─────────────────────────────────────────────────────
+export:
+  batch_size: 500                  # Sheets API batch size
+  max_rows_per_tab: 50000
+  strip_internal_fields: true
+  require_grounded: true
+  require_schema_valid: true
+  require_resolved: true
+
+# ─── Freshness ──────────────────────────────────────────────────
+freshness:
+  jobs_max_age_hours: 168          # 7 days
+  news_max_age_hours: 24           # 24 hours
+  default_max_age_hours: 720       # 30 days

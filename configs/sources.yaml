@@ -1,0 +1,130 @@
+# ProvenMesh — Data Source Configuration
+# Each source defines discovery URLs, fetch tier, and rate limits.
+# Producers use this to enumerate listing pages and enqueue detail URLs.
+
+defaults:
+  fetch_tier: 1                    # Start with cheapest method
+  requests_per_second: 1           # Per-domain baseline (PDF §7.2)
+  max_concurrency: 5               # Per-domain concurrent requests (PDF §3.1)
+  timeout_seconds: 30
+  max_retries: 5
+  respect_robots_txt: true         # Always (PDF §7.2)
+  honor_crawl_delay: true
+
+verticals:
+
+  startups:
+    sources:
+      - name: crunchbase_listings
+        base_url: "https://www.crunchbase.com/discover/organizations"
+        listing_pattern: "/organizations?page={page}"
+        detail_selector: "a.component--field-formatter--entity-link"
+        fetch_tier: 2              # JS-rendered
+        max_pages: 100
+        requests_per_second: 0.5   # Aggressive protection
+        max_concurrency: 1
+
+      - name: techcrunch_ai
+        base_url: "https://techcrunch.com/category/artificial-intelligence/"
+        listing_pattern: "/category/artificial-intelligence/page/{page}/"
+        detail_selector: "a.loop-card__title-link"
+        fetch_tier: 1
+        max_pages: 50
+
+      - name: ycombinator_companies
+        base_url: "https://www.ycombinator.com/companies"
+        listing_pattern: "/companies?batch=&industry=Artificial+Intelligence&page={page}"
+        detail_selector: "a[class*='company']"
+        fetch_tier: 2
+        max_pages: 20
+
+  products:
+    sources:
+      - name: producthunt_ai
+        base_url: "https://www.producthunt.com/topics/artificial-intelligence"
+        listing_pattern: "/topics/artificial-intelligence?page={page}"
+        detail_selector: "a[data-test='post-name']"
+        fetch_tier: 2
+        max_pages: 50
+        requests_per_second: 0.5
+
+      - name: futurepedia
+        base_url: "https://www.futurepedia.io"
+        listing_pattern: "/ai-tools?page={page}"
+        detail_selector: "a.tool-card"
+        fetch_tier: 1
+        max_pages: 100
+
+  papers:
+    sources:
+      - name: arxiv_api
+        base_url: "https://export.arxiv.org/api/query"
+        api_params:
+          search_query: "cat:cs.AI OR cat:cs.LG OR cat:cs.CL"
+          sortBy: submittedDate
+          sortOrder: descending
+          max_results: 100
+          start: "{offset}"
+        fetch_tier: 1              # Structured API, no scraping
+        requests_per_second: 3     # arxiv allows higher rate
+        is_api: true
+
+      - name: github_enrichment
+        base_url: "https://api.github.com"
+        api_pattern: "/repos/{owner}/{repo}"
+        fetch_tier: 1
+        requests_per_second: 4    # With token: 5000/hr
+        is_api: true
+        requires_token: true
+
+      - name: paperswithcode
+        base_url: "https://paperswithcode.co"
+        listing_pattern: "/latest?page={page}"
+        detail_selector: "a.paper-card"
+        fetch_tier: 1
+        max_pages: 20
+        is_secondary: true         # PDF §3.3: secondary enrichment only
+
+  jobs:
+    sources:
+      - name: ai_jobs_net
+        base_url: "https://aijobs.net"
+        listing_pattern: "/?page={page}"
+        detail_selector: "a.job-listing"
+        fetch_tier: 1
+        max_pages: 50
+
+      - name: linkedin_ai_jobs
+        base_url: "https://www.linkedin.com/jobs/search"
+        listing_pattern: "/?keywords=artificial+intelligence&start={offset}"
+        detail_selector: "a.base-card__full-link"
+        fetch_tier: 3              # Heavy protection
+        max_pages: 20
+        requests_per_second: 0.3
+        max_concurrency: 1
+
+  news:
+    sources:
+      - name: venturebeat_ai
+        base_url: "https://venturebeat.com/category/ai/"
+        listing_pattern: "/category/ai/page/{page}/"
+        detail_selector: "a.article-title"
+        fetch_tier: 1
+        max_pages: 30
+        freshness_window_hours: 24
+
+      - name: the_verge_ai
+        base_url: "https://www.theverge.com/ai-artificial-intelligence"
+        listing_pattern: "/ai-artificial-intelligence/archives/{page}"
+        detail_selector: "a.duet--article--headline"
+        fetch_tier: 1
+        max_pages: 20
+        freshness_window_hours: 24
+
+      - name: mit_tech_review
+        base_url: "https://www.technologyreview.com/topic/artificial-intelligence/"
+        listing_pattern: "/topic/artificial-intelligence/page/{page}/"
+        detail_selector: "a.teaserItem__title"
+        fetch_tier: 1
+        max_pages: 15
+        freshness_window_hours: 72

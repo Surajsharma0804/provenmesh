@@ -1,0 +1,53 @@
+# ProvenMesh — LLM Model Configuration
+# Fallback chain: Gemini Flash → Groq → DeepSeek (PDF §5.1)
+
+fallback_chain:
+  - provider: gemini
+    model: gemini-2.0-flash
+    context_window: 1048576
+    max_output_tokens: 8192
+    cost_per_1k_input: 0.000075
+    cost_per_1k_output: 0.0003
+    priority: 1                    # Cheapest, fastest (PDF §5.1)
+    timeout_seconds: 30
+    max_retries: 3
+
+  - provider: groq
+    model: llama-3.3-70b-versatile
+    context_window: 131072
+    max_output_tokens: 8192
+    cost_per_1k_input: 0.00059
+    cost_per_1k_output: 0.00079
+    priority: 2                    # Fallback on 429/5xx
+    timeout_seconds: 45
+    max_retries: 3
+
+  - provider: deepseek
+    model: deepseek-chat
+    context_window: 131072
+    max_output_tokens: 8192
+    cost_per_1k_input: 0.00014
+    cost_per_1k_output: 0.00028
+    priority: 3                    # Last resort
+    timeout_seconds: 60
+    max_retries: 3
+
+# Circuit breaker settings (PDF §5.1: 5 failures → 60s trip)
+circuit_breaker:
+  failure_threshold: 5
+  recovery_timeout_seconds: 60
+  half_open_max_requests: 2
+
+# Chunking settings (PDF §5.2)
+chunking:
+  context_utilization_ratio: 0.70  # 70% of context window
+  min_chunk_tokens: 200
+  overlap_tokens: 100
+  prefer_semantic_boundaries: true
+
+# Embedding model for entity resolution
+embedding:
+  model: all-MiniLM-L6-v2
+  dimension: 384
+  batch_size: 64
+  device: cpu                      # Set to cuda if GPU available
