@@ -7,7 +7,6 @@ and compares with configurable tolerance (default ±1%).
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from provenmesh.domain.enums import FieldVerification
 from provenmesh.observability.logging import get_logger
@@ -39,7 +38,7 @@ NUMERIC_PATTERN = re.compile(
 )
 
 
-def parse_numeric(text: str) -> Optional[float]:
+def parse_numeric(text: str) -> float | None:
     """Parse a numeric string into a float, handling suffixes and currency.
 
     Examples:
