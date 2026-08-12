@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from provenmesh.crawler.date_parser import ParsedDate, parse_date, parse_structured_date
 from provenmesh.domain.enums import DateConfidence
@@ -35,20 +33,20 @@ class TestRelativeParsing:
     """Tests for relative date expressions (heuristic confidence)."""
 
     def test_hours_ago(self) -> None:
-        now = datetime(2025, 6, 1, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 6, 1, 12, 0, tzinfo=UTC)
         result = parse_date("3 hours ago", fetch_time=now)
         assert result is not None
         assert result.confidence == DateConfidence.HEURISTIC
         assert result.value.hour == 9
 
     def test_days_ago(self) -> None:
-        now = datetime(2025, 6, 10, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 6, 10, 12, 0, tzinfo=UTC)
         result = parse_date("5 days ago", fetch_time=now)
         assert result is not None
         assert result.value.day == 5
 
     def test_yesterday(self) -> None:
-        now = datetime(2025, 6, 10, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 6, 10, 12, 0, tzinfo=UTC)
         result = parse_date("yesterday", fetch_time=now)
         assert result is not None
         assert result.value.day == 9
