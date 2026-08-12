@@ -6,13 +6,11 @@ operations. Workers can safely retry without creating duplicates.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from provenmesh.graph.models import (
     CrawlItemRecord,
@@ -21,6 +19,11 @@ from provenmesh.graph.models import (
     RelationshipRecord,
 )
 from provenmesh.observability.logging import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
