@@ -7,8 +7,7 @@ These are queued for human review.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +32,7 @@ class ReviewItem(BaseModel):
     status: ReviewStatus = ReviewStatus.NEEDS_REVIEW
     reviewer: str = ""
     decision: str = ""  # "merge", "new_entity", "reject"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     resolved_at: datetime | None = None
 
 
@@ -78,7 +77,7 @@ class ReviewQueue:
                 item.status = ReviewStatus.RESOLVED
                 item.decision = decision
                 item.reviewer = reviewer
-                item.resolved_at = datetime.now(timezone.utc)
+                item.resolved_at = datetime.now(UTC)
                 self._resolved.append(item)
                 logger.info(
                     "review_item_resolved",
