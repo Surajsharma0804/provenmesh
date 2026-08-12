@@ -9,10 +9,9 @@ from __future__ import annotations
 import pytest
 
 from provenmesh.extraction.providers.base import BaseLLMProvider
+from provenmesh.extraction.providers.deepseek import DeepSeekProvider
 from provenmesh.extraction.providers.gemini import GeminiProvider
 from provenmesh.extraction.providers.groq import GroqProvider
-from provenmesh.extraction.providers.deepseek import DeepSeekProvider
-
 
 ALL_PROVIDERS = [GeminiProvider, GroqProvider, DeepSeekProvider]
 
