@@ -5,10 +5,8 @@ Handles creation, validation, and deduplication of inter-entity relationships.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
-from provenmesh.domain.enums import RelationType
 from provenmesh.graph.models import RelationshipRecord
 from provenmesh.observability.logging import get_logger
 
