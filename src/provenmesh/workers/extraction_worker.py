@@ -6,7 +6,7 @@ Pipeline: retrieve S3 → chunk → LLM extract → ground → validate schema �
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from provenmesh.config.constants import (
     EXTRACTION_CONSUMER_GROUP,
@@ -15,7 +15,6 @@ from provenmesh.config.constants import (
     RESOLUTION_STREAM,
 )
 from provenmesh.extraction.orchestrator import ExtractionOrchestrator
-from provenmesh.graph.models import CrawlItemRecord
 from provenmesh.graph.repository import CrawlItemRepository
 from provenmesh.grounding.engine import GroundingEngine
 from provenmesh.grounding.schema_validator import validate_record
@@ -94,7 +93,7 @@ class ExtractionWorker:
         # 4. Validate against JSON schema
         schema_valid, schema_errors = validate_record(
             {"content": fields, "schemaVersion": "1.0", "recordType": msg.record_type,
-             "source": {"url": msg.url, "fetchedAt": datetime.now(timezone.utc).isoformat()}},
+             "source": {"url": msg.url, "fetchedAt": datetime.now(UTC).isoformat()}},
             msg.record_type,
         )
 
@@ -105,7 +104,7 @@ class ExtractionWorker:
                 msg.url,
                 msg.source_name,
                 "EXTRACTED" if grounding_result.is_exportable else "GROUNDING_FAILED",
-                extracted_at=datetime.now(timezone.utc),
+                extracted_at=datetime.now(UTC),
             )
 
         # 6. Emit resolution message
