@@ -8,7 +8,6 @@ trips a tier out of rotation for 60s after 5 consecutive failures.
 from __future__ import annotations
 
 import asyncio
-import random
 import time
 
 from provenmesh.config.settings import get_settings
@@ -16,7 +15,11 @@ from provenmesh.domain.enums import CircuitState
 from provenmesh.extraction.cache import get_cached_response, set_cached_response
 from provenmesh.extraction.chunking import chunk_text, estimate_tokens, extract_main_content
 from provenmesh.extraction.cost_guard import CostGuard
-from provenmesh.extraction.parser import extract_evidenced_fields, extract_relationships, parse_llm_response
+from provenmesh.extraction.parser import (
+    extract_evidenced_fields,
+    extract_relationships,
+    parse_llm_response,
+)
 from provenmesh.extraction.prompts import EXTRACTION_PROMPTS, SYSTEM_PROMPT
 from provenmesh.extraction.providers.base import (
     BaseLLMProvider,
