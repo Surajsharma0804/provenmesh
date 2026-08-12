@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger, set_correlation_id
