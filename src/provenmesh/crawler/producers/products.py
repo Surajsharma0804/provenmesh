@@ -57,6 +57,7 @@ class ProductProducer(BaseProducer):
     def _extract_detail_urls(self, html: str, base_url: str) -> list[str]:
         """Extract product detail page URLs from a listing page."""
         from bs4 import BeautifulSoup
+
         from provenmesh.crawler.normalization import normalize_url
 
         soup = BeautifulSoup(html, "lxml")
