@@ -6,8 +6,7 @@ and compares with configurable tolerance (default ±1 day).
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import datetime, timedelta
 
 import dateparser
 
@@ -19,7 +18,7 @@ logger = get_logger(__name__)
 DEFAULT_DATE_TOLERANCE_DAYS = 1
 
 
-def parse_date_value(text: str) -> Optional[datetime]:
+def parse_date_value(text: str) -> datetime | None:
     """Parse any date string into a datetime."""
     if not text or not text.strip():
         return None
