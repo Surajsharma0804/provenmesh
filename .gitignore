@@ -1,0 +1,53 @@
+# ─── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# ─── Virtual Environments ───────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── IDE ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ─── Secrets — NEVER commit real credentials ────────────────────
+.env
+*.pem
+*.key
+service_account.json
+
+# ─── OS ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Testing ────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Docker ─────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Data (local dev artifacts) ─────────────────────────────────
+*.db
+*.sqlite3
+data/
+logs/
