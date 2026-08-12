@@ -37,7 +37,7 @@ dependencies = [
     # NLP & Matching
     "rapidfuzz>=3.9",
     "sentence-transformers>=3.0",
-    "numpy>=1.26,<2.1",
+    "numpy>=1.26,<3.0",
 
     # Data Validation & Parsing
     "pydantic>=2.8,<3.0",
