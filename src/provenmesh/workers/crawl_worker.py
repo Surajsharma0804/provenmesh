@@ -6,8 +6,8 @@ Transaction boundary (v2 §38):
 
 from __future__ import annotations
 
-import asyncio
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from provenmesh.config.constants import (
     CRAWL_CONSUMER_GROUP,
@@ -26,6 +26,9 @@ from provenmesh.queue.messages import CrawlMessage, ExtractionMessage, QueueMess
 from provenmesh.queue.producer import QueueProducer
 from provenmesh.raw_store.s3 import store_raw_payload
 from provenmesh.storage.transactions import unit_of_work
+
+if TYPE_CHECKING:
+    import asyncio
 
 logger = get_logger(__name__)
 

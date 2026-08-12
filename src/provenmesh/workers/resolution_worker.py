@@ -5,10 +5,10 @@ Pipeline: deserialize entity → resolve → persist entity → persist relation
 
 from __future__ import annotations
 
-import asyncio
 import json
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from provenmesh.config.constants import (
     RESOLUTION_CONSUMER_GROUP,
@@ -31,6 +31,9 @@ from provenmesh.resolver.review_queue import ReviewItem, ReviewQueue
 from provenmesh.resolver.seeds import SeedStore
 from provenmesh.security.sanitization import sanitize_entity_name
 from provenmesh.storage.transactions import unit_of_work
+
+if TYPE_CHECKING:
+    import asyncio
 
 logger = get_logger(__name__)
 
@@ -58,7 +61,7 @@ class ResolutionWorker:
 
         # Deserialize entity data
         entity_data = json.loads(msg.entity_data) if msg.entity_data else {}
-        relationship_candidates = json.loads(msg.relationship_candidates) if msg.relationship_candidates else []
+        relationship_candidates = json.loads(msg.relationship_candidates) if msg.relationship_candidates else []  # noqa: E501
 
         fields = entity_data.get("fields", {})
         entity_name_field = fields.get("entityName", fields.get("title", {}))
@@ -103,7 +106,7 @@ class ResolutionWorker:
         async with unit_of_work() as session:
             entity_repo = EntityRepository(session)
             rel_repo = RelationshipRepository(session)
-            evidence_repo = EvidenceRepository(session)
+            EvidenceRepository(session)
             crawl_repo = CrawlItemRepository(session)
 
             # Create/update entity

@@ -53,7 +53,7 @@ class ExportWorker:
 
     async def start(self) -> None:
         """Start the export worker loop."""
-        settings = get_settings()
+        get_settings()
         redis = await get_redis()
         self._consumer = StreamConsumer(
             redis=redis,

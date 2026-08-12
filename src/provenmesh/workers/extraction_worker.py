@@ -5,8 +5,8 @@ Pipeline: retrieve S3 → chunk → LLM extract → ground → validate schema �
 
 from __future__ import annotations
 
-import asyncio
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from provenmesh.config.constants import (
     EXTRACTION_CONSUMER_GROUP,
@@ -25,6 +25,9 @@ from provenmesh.queue.messages import ExtractionMessage, QueueMessage, Resolutio
 from provenmesh.queue.producer import QueueProducer
 from provenmesh.raw_store.s3 import retrieve_raw_payload
 from provenmesh.storage.transactions import unit_of_work
+
+if TYPE_CHECKING:
+    import asyncio
 
 logger = get_logger(__name__)
 
@@ -91,7 +94,7 @@ class ExtractionWorker:
         )
 
         # 4. Validate against JSON schema
-        schema_valid, schema_errors = validate_record(
+        schema_valid, _schema_errors = validate_record(
             {"content": fields, "schemaVersion": "1.0", "recordType": msg.record_type,
              "source": {"url": msg.url, "fetchedAt": datetime.now(UTC).isoformat()}},
             msg.record_type,
