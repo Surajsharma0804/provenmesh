@@ -23,6 +23,7 @@ from rapidfuzz import fuzz
 from provenmesh.config.settings import get_settings
 from provenmesh.domain.enums import FieldVerification, VerificationStatus
 from provenmesh.domain.evidence import EvidenceRecord
+from provenmesh.grounding.hallucination import HallucinationDetector
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import GROUNDING_FAILURE_TOTAL, GROUNDING_TOTAL
 
@@ -41,6 +42,7 @@ class GroundingEngine:
         self._text_threshold = self._settings.grounding_threshold  # 90
         self._number_tolerance_pct = 1.0
         self._date_tolerance_days = 1
+        self._hallucination_detector = HallucinationDetector()
 
     def verify_record(
         self,
@@ -100,11 +102,33 @@ class GroundingEngine:
         else:
             overall = VerificationStatus.UNVERIFIED
 
+        # Build grounding scores map for hallucination detector
+        grounding_scores = {
+            rec.field_name: rec.fuzzy_score
+            for rec in evidence_records
+        }
+
+        # Run hallucination detection
+        hallucination_report = self._hallucination_detector.analyze_record(
+            extracted_fields, source_text, grounding_scores,
+        )
+
+        # Downgrade overall status if hallucination is detected
+        if hallucination_report.has_critical:
+            overall = VerificationStatus.UNVERIFIED
+            logger.warning(
+                "record_rejected_hallucination",
+                entity_id=entity_id,
+                trust_score=hallucination_report.overall_trust_score,
+                flags=len(hallucination_report.flags),
+            )
+
         return GroundingResult(
             verification_status=overall,
             evidence_records=evidence_records,
             grounded_count=grounded_count,
             total_count=total_count,
+            hallucination_report=hallucination_report,
         )
 
     def _verify_field(
@@ -119,7 +143,7 @@ class GroundingEngine:
         """Verify a single field against source text."""
         value = field_data.get("value")
         evidence = field_data.get("evidence", "")
-        confidence = float(field_data.get("confidence", 0.0))
+        float(field_data.get("confidence", 0.0))
 
         GROUNDING_TOTAL.labels(field_type=field_name.split("[")[0]).inc()
 
@@ -264,11 +288,13 @@ class GroundingResult:
         evidence_records: list[EvidenceRecord],
         grounded_count: int,
         total_count: int,
+        hallucination_report: Any = None,
     ) -> None:
         self.verification_status = verification_status
         self.evidence_records = evidence_records
         self.grounded_count = grounded_count
         self.total_count = total_count
+        self.hallucination_report = hallucination_report
 
     @property
     def grounding_ratio(self) -> float:

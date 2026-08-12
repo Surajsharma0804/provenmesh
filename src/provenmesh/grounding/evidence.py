@@ -33,7 +33,7 @@ def build_evidence_record(
         raw_s3_key=raw_s3_key,
         verification_status=verification_status,
         fuzzy_score=fuzzy_score,
-        verified_at=datetime.now(UTC) if verification_status == FieldVerification.GROUNDED else None,
+        verified_at=datetime.now(UTC) if verification_status == FieldVerification.GROUNDED else None,  # noqa: E501
         correlation_id=correlation_id,
     )
 

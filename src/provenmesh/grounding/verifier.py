@@ -106,7 +106,7 @@ def aggregate_verification(
 
     total = len(field_results)
     grounded = sum(1 for _, status, _ in field_results if status == FieldVerification.GROUNDED)
-    conflicting = sum(1 for _, status, _ in field_results if status == FieldVerification.CONFLICTING)
+    conflicting = sum(1 for _, status, _ in field_results if status == FieldVerification.CONFLICTING)  # noqa: E501
 
     if conflicting > 0:
         return VerificationStatus.REJECTED, grounded / total
