@@ -8,7 +8,7 @@ This makes hallucination structurally harder.
 
 from __future__ import annotations
 
-SYSTEM_PROMPT = """You are an AI data extraction specialist for ProvenMesh, an intelligence graph system.
+SYSTEM_PROMPT = """You are an AI data extraction specialist for ProvenMesh, an intelligence graph system.  # noqa: E501
 Your task is to extract structured data from web page content with EVIDENCE for every field.
 
 CRITICAL RULES:
@@ -22,8 +22,8 @@ CRITICAL RULES:
    - "evidence": ""
    - "confidence": 0.0
 
-3. NEVER invent or hallucinate information. Only extract what is explicitly stated in the source text.
-4. The "evidence" field must be a direct quote or close paraphrase from the source — not your own summary.
+3. NEVER invent or hallucinate information. Only extract what is explicitly stated in the source text.  # noqa: E501
+4. The "evidence" field must be a direct quote or close paraphrase from the source — not your own summary.  # noqa: E501
 5. Output valid JSON matching the requested schema."""
 
 
@@ -42,9 +42,9 @@ Return a JSON object with this structure:
   "employeeCount": {"value": "...", "evidence": "...", "confidence": 0.0},
   "website": {"value": "...", "evidence": "...", "confidence": 0.0},
   "products": [{"value": "...", "evidence": "...", "confidence": 0.0}],
-  "keyPeople": [{"name": {"value": "...", "evidence": "...", "confidence": 0.0}, "role": {"value": "...", "evidence": "...", "confidence": 0.0}}],
+  "keyPeople": [{"name": {"value": "...", "evidence": "...", "confidence": 0.0}, "role": {"value": "...", "evidence": "...", "confidence": 0.0}}],  # noqa: E501
   "relationships": [
-    {"source": "...", "target": "...", "type": "FOUNDED_BY|BUILDS_PRODUCT|WORKS_AT", "evidence": "...", "confidence": 0.0}
+    {"source": "...", "target": "...", "type": "FOUNDED_BY|BUILDS_PRODUCT|WORKS_AT", "evidence": "...", "confidence": 0.0}  # noqa: E501
   ]
 }
 
@@ -68,7 +68,7 @@ Return a JSON object with this structure:
   "website": {"value": "...", "evidence": "...", "confidence": 0.0},
   "githubUrl": {"value": "...", "evidence": "...", "confidence": 0.0},
   "relationships": [
-    {"source": "...", "target": "...", "type": "BUILDS_PRODUCT", "evidence": "...", "confidence": 0.0}
+    {"source": "...", "target": "...", "type": "BUILDS_PRODUCT", "evidence": "...", "confidence": 0.0}  # noqa: E501
   ]
 }
 
@@ -90,7 +90,7 @@ Return a JSON object with this structure:
   "githubUrl": {"value": "...", "evidence": "...", "confidence": 0.0},
   "affiliations": [{"value": "...", "evidence": "...", "confidence": 0.0}],
   "relationships": [
-    {"source": "...", "target": "...", "type": "PUBLISHED_PAPER|CITES", "evidence": "...", "confidence": 0.0}
+    {"source": "...", "target": "...", "type": "PUBLISHED_PAPER|CITES", "evidence": "...", "confidence": 0.0}  # noqa: E501
   ]
 }
 
@@ -133,7 +133,7 @@ Return a JSON object with this structure:
   "mentionedEntities": [{"value": "...", "evidence": "...", "confidence": 0.0}],
   "keyTopics": [{"value": "...", "evidence": "...", "confidence": 0.0}],
   "relationships": [
-    {"source": "...", "target": "...", "type": "FOUNDED_BY|BUILDS_PRODUCT|CITES", "evidence": "...", "confidence": 0.0}
+    {"source": "...", "target": "...", "type": "FOUNDED_BY|BUILDS_PRODUCT|CITES", "evidence": "...", "confidence": 0.0}  # noqa: E501
   ]
 }
 

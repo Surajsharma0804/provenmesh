@@ -76,7 +76,11 @@ def extract_evidenced_fields(
                 {
                     "value": item.get("value") if isinstance(item, dict) else item,
                     "evidence": item.get("evidence", "") if isinstance(item, dict) else "",
-                    "confidence": float(item.get("confidence", 0.0)) if isinstance(item, dict) else 0.0,
+                    "confidence": (
+                        float(item.get("confidence", 0.0))
+                        if isinstance(item, dict)
+                        else 0.0
+                    ),
                 }
                 for item in value
             ]

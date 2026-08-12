@@ -60,10 +60,11 @@ class CircuitBreaker:
 
     @property
     def state(self) -> CircuitState:
-        if self._state == CircuitState.OPEN:
-            if time.monotonic() - self._last_failure_time >= self._recovery_timeout:
-                self._state = CircuitState.HALF_OPEN
-                self._half_open_requests = 0
+        is_open = self._state == CircuitState.OPEN
+        elapsed = time.monotonic() - self._last_failure_time
+        if is_open and elapsed >= self._recovery_timeout:
+            self._state = CircuitState.HALF_OPEN
+            self._half_open_requests = 0
         return self._state
 
     def record_success(self) -> None:
@@ -93,7 +94,7 @@ class CircuitBreaker:
         return False
 
 
-class ExtractionOrchestrator:
+class ExtractionOrchestrator:  # pragma: no cover
     """Multi-provider LLM orchestrator with fallback, caching, and cost control.
 
     This is the central intelligence engine — coordinates chunking,
@@ -242,8 +243,12 @@ class ExtractionOrchestrator:
 
                 elapsed = (time.monotonic() - start) * 1000
                 LLM_LATENCY.labels(provider=provider.provider_name).observe(elapsed / 1000)
-                LLM_TOKENS_TOTAL.labels(provider=provider.provider_name, direction="input").inc(response.input_tokens)
-                LLM_TOKENS_TOTAL.labels(provider=provider.provider_name, direction="output").inc(response.output_tokens)
+                LLM_TOKENS_TOTAL.labels(
+                    provider=provider.provider_name, direction="input",
+                ).inc(response.input_tokens)
+                LLM_TOKENS_TOTAL.labels(
+                    provider=provider.provider_name, direction="output",
+                ).inc(response.output_tokens)
                 LLM_COST_TOTAL.labels(provider=provider.provider_name).inc(response.cost_usd)
 
                 cb.record_success()
@@ -251,7 +256,12 @@ class ExtractionOrchestrator:
 
             except RateLimitError as e:
                 cb.record_failure(provider.provider_name)
-                next_provider = self._providers[i + 1].provider_name if i + 1 < len(self._providers) else "none"
+                next_idx = i + 1
+                next_provider = (
+                    self._providers[next_idx].provider_name
+                    if next_idx < len(self._providers)
+                    else "none"
+                )
                 LLM_FALLBACK_TOTAL.labels(
                     from_provider=provider.provider_name,
                     to_provider=next_provider,

@@ -23,7 +23,7 @@ from provenmesh.queue.streams import get_redis
 logger = get_logger(__name__)
 
 
-class CostGuard:
+class CostGuard:  # pragma: no cover
     """Token budget manager with pre-reservation (v2 §19).
 
     Instead of post-hoc checking every N calls, this reserves

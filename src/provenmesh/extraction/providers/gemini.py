@@ -89,7 +89,7 @@ class GeminiProvider(BaseLLMProvider):
                 output_tokens=output_tokens,
                 latency_ms=elapsed,
                 cost_usd=cost,
-                finish_reason=str(response.candidates[0].finish_reason) if response.candidates else "",
+                finish_reason=str(response.candidates[0].finish_reason) if response.candidates else "",  # noqa: E501
             )
 
         except Exception as e:
