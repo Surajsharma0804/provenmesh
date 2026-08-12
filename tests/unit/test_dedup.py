@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from provenmesh.crawler.dedup import compute_content_hash, compute_dedup_hash
 
 
