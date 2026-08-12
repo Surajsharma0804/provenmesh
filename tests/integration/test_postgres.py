@@ -20,6 +20,7 @@ POSTGRES_DSN = os.getenv(
 @pytest.fixture
 async def db_session():
     """Provide a test database session with rollback."""
+    from sqlalchemy import text
     from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
     from sqlalchemy.orm import sessionmaker
 
@@ -28,7 +29,7 @@ async def db_session():
 
     try:
         async with engine.connect() as conn:
-            await conn.execute("SELECT 1")  # type: ignore[arg-type]
+            await conn.execute(text("SELECT 1"))
     except Exception:
         pytest.skip("PostgreSQL not available")
 
