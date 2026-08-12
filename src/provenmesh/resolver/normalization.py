@@ -8,7 +8,6 @@ from __future__ import annotations
 import re
 import unicodedata
 
-
 # Legal suffixes to strip
 LEGAL_SUFFIXES = re.compile(
     r"\b(?:inc\.?|ltd\.?|corp\.?|llc\.?|plc\.?|gmbh|co\.?|limited|corporation|company|"
