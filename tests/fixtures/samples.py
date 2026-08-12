@@ -15,7 +15,7 @@ STARTUP_HTML = """
 <h1>Anthropic</h1>
 <p>Anthropic is an AI safety company founded in 2021 by Dario Amodei and Daniela Amodei.</p>
 <p>The company is headquartered in San Francisco, California.</p>
-<p>Anthropic has raised $7.3 billion in funding from investors including Google and Spark Capital.</p>
+<p>Anthropic has raised $7.3 billion in funding from investors including Google and Spark Capital.</p>  # noqa: E501
 <p>Their flagship product is Claude, a helpful, harmless, and honest AI assistant.</p>
 <p>Website: <a href="https://www.anthropic.com">anthropic.com</a></p>
 </article>
