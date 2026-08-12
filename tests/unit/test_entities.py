@@ -5,17 +5,17 @@ from __future__ import annotations
 import pytest
 
 from provenmesh.domain.entities import (
+    ENTITY_TYPE_MAP,
     EvidencedField,
-    SourceInfo,
-    StartupEntity,
-    ProductEntity,
-    PaperEntity,
     JobEntity,
     NewsSignal,
+    PaperEntity,
+    ProductEntity,
+    SourceInfo,
+    StartupEntity,
     create_entity,
-    ENTITY_TYPE_MAP,
 )
-from provenmesh.domain.enums import RecordType, ProcessingState, VerificationStatus
+from provenmesh.domain.enums import ProcessingState, RecordType, VerificationStatus
 
 
 class TestEvidencedField:
