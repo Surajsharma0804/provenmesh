@@ -20,7 +20,7 @@ _redis_pool: redis.Redis | None = None
 
 async def get_redis() -> redis.Redis:
     """Get or create a shared Redis connection pool."""
-    global _redis_pool  # noqa: PLW0603
+    global _redis_pool
     if _redis_pool is None:
         settings = get_settings()
         _redis_pool = redis.from_url(
@@ -39,7 +39,7 @@ async def get_redis() -> redis.Redis:
 
 async def close_redis() -> None:
     """Close the Redis connection pool."""
-    global _redis_pool  # noqa: PLW0603
+    global _redis_pool
     if _redis_pool is not None:
         await _redis_pool.close()
         _redis_pool = None
