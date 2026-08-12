@@ -7,7 +7,6 @@ recency to produce a final entity confidence score.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 
 from provenmesh.observability.logging import get_logger
 
