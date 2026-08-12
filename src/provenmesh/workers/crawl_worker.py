@@ -7,7 +7,7 @@ Transaction boundary (v2 §38):
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from provenmesh.config.constants import (
     CRAWL_CONSUMER_GROUP,
@@ -18,7 +18,6 @@ from provenmesh.config.constants import (
 from provenmesh.crawler.dedup import check_content_seen, compute_content_hash
 from provenmesh.crawler.fetcher import TieredFetcher
 from provenmesh.domain.evidence import CrawlManifest
-from provenmesh.graph.models import CrawlItemRecord
 from provenmesh.graph.repository import CrawlItemRepository
 from provenmesh.observability.health import HealthStatus
 from provenmesh.observability.logging import get_logger, set_correlation_id
@@ -111,7 +110,7 @@ class CrawlWorker:
                 raw_s3_key=s3_key,
                 fetch_tier=result.fetch_tier,
                 status_code=result.status,
-                fetched_at=datetime.now(timezone.utc),
+                fetched_at=datetime.now(UTC),
             )
 
         # Emit extraction message
