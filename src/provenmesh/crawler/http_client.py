@@ -129,7 +129,7 @@ async def fetch_url(
     *,
     headers: dict[str, str] | None = None,
     follow_redirects: bool = True,
-    timeout: int | None = None,
+    timeout: int | None = None,  # noqa: ASYNC109
 ) -> FetchResult:
     """Fetch a URL via aiohttp (Tier 1).
 
@@ -141,7 +141,7 @@ async def fetch_url(
 
     # Rotating User-Agent (PDF §7.1)
     request_headers: dict[str, str] = {
-        "User-Agent": random.choice(USER_AGENTS),
+        "User-Agent": random.choice(USER_AGENTS),  # noqa: S311
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",

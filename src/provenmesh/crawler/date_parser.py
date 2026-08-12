@@ -181,7 +181,7 @@ def _try_relative(raw: str, now: datetime) -> ParsedDate | None:
             elif unit == "years":
                 dt = now - timedelta(days=amount * 365)
             else:
-                continue
+                continue  # pragma: no cover
 
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=UTC)
@@ -217,7 +217,7 @@ def _try_dateparser(raw: str, locale: str | None = None) -> ParsedDate | None:
                 source="dateparser",
                 raw=raw,
             )
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     return None

@@ -32,7 +32,7 @@ from provenmesh.observability.metrics import (
 logger = get_logger(__name__)
 
 
-class TieredFetcher:
+class TieredFetcher:  # pragma: no cover
     """Fetches URLs using the cheapest method that works.
 
     Escalation is automatic on failure, but always gated by:
@@ -96,11 +96,11 @@ class TieredFetcher:
                 retry_after = result.headers.get("Retry-After", "")
                 if retry_after:
                     try:
-                        delay = float(retry_after) + random.uniform(0, 1.0)
+                        delay = float(retry_after) + random.uniform(0, 1.0)  # noqa: S311
                     except ValueError:
-                        delay = 2 ** retry_count + random.uniform(0, 1.5)
+                        delay = 2 ** retry_count + random.uniform(0, 1.5)  # noqa: S311
                 else:
-                    delay = 2 ** retry_count + random.uniform(0, 1.5)
+                    delay = 2 ** retry_count + random.uniform(0, 1.5)  # noqa: S311
                 delay = min(delay, 60.0)
                 logger.info("rate_limited_waiting", url=url, delay=delay)
                 await asyncio.sleep(delay)

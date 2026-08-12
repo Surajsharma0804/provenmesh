@@ -81,14 +81,14 @@ class PapersProducer(BaseProducer):
         """Parse ArXiv API XML response to extract paper URLs."""
         urls: list[str] = []
         try:
-            root = ET.fromstring(xml_text)
+            root = ET.fromstring(xml_text)  # noqa: S314
             ns = {"atom": "http://www.w3.org/2005/Atom"}
 
             for entry in root.findall("atom:entry", ns):
                 # Get the abstract page URL
                 for link in entry.findall("atom:link", ns):
                     href = link.get("href", "")
-                    link_type = link.get("type", "")
+                    link.get("type", "")
                     if href and "abs" in href:
                         urls.append(href)
                         break

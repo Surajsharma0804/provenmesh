@@ -80,7 +80,7 @@ class ProxyPool:
 
         # Add some randomness among the top proxies
         top_n = min(3, len(available))
-        proxy = random.choice(available[:top_n])
+        proxy = random.choice(available[:top_n])  # noqa: S311
 
         self._domain_assignments[domain] = proxy
         return proxy

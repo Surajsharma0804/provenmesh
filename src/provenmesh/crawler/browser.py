@@ -63,10 +63,10 @@ async def _ensure_browser() -> None:
             if _context:
                 await _context.close()
 
-            viewport = random.choice(_VIEWPORTS)
+            viewport = random.choice(_VIEWPORTS)  # noqa: S311
             _context = await _browser.new_context(
                 viewport=viewport,
-                user_agent=random.choice(USER_AGENTS),
+                user_agent=random.choice(USER_AGENTS),  # noqa: S311
                 locale="en-US",
                 timezone_id="America/New_York",
                 java_script_enabled=True,
@@ -107,17 +107,17 @@ async def fetch_with_browser(
 
         # Anti-bot: random mouse movement
         await page.mouse.move(
-            random.randint(100, 800),
-            random.randint(100, 600),
+            random.randint(100, 800),  # noqa: S311
+            random.randint(100, 600),  # noqa: S311
         )
 
         # Anti-bot: random scroll
         await page.evaluate(
-            f"window.scrollTo(0, {random.randint(100, 500)})"
+            f"window.scrollTo(0, {random.randint(100, 500)})"  # noqa: S311
         )
 
         # Small realistic delay
-        await asyncio.sleep(random.uniform(0.3, 1.0))
+        await asyncio.sleep(random.uniform(0.3, 1.0))  # noqa: S311
 
         # Get rendered content
         content = await page.content()
