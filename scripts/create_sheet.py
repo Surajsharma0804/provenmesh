@@ -14,8 +14,13 @@ import json
 import os
 import sys
 
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+try:
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build  # type: ignore[import-untyped]
+except ImportError:
+    print("ERROR: Install google-api-python-client and google-auth:")
+    print("  pip install google-api-python-client google-auth")
+    sys.exit(1)
 
 
 TAB_NAMES = [
