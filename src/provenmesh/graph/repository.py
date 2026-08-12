@@ -6,8 +6,9 @@ operations. Workers can safely retry without creating duplicates.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -18,7 +19,6 @@ from provenmesh.graph.models import (
     EntityRecord,
     EvidenceRow,
     RelationshipRecord,
-    ReviewItemRecord,
 )
 from provenmesh.observability.logging import get_logger
 
@@ -60,7 +60,7 @@ class EntityRepository:
                 "verification_status": entity.verification_status,
                 "grounding_ratio": entity.grounding_ratio,
                 "source_count": EntityRecord.source_count + 1,
-                "updated_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(UTC),
             },
         )
         await self._session.execute(stmt)
@@ -104,7 +104,7 @@ class EntityRepository:
         await self._session.execute(
             update(EntityRecord)
             .where(EntityRecord.canonical_id.in_(canonical_ids))
-            .values(exported_at=datetime.now(timezone.utc))
+            .values(exported_at=datetime.now(UTC))
         )
 
 
