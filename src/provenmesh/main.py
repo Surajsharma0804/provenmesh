@@ -37,7 +37,10 @@ def cli() -> None:
 
 
 @cli.command()
-@click.option("--verticals", "-v", multiple=True, default=["startups", "products", "papers", "jobs", "news"])
+@click.option(
+    "--verticals", "-v", multiple=True,
+    default=["startups", "products", "papers", "jobs", "news"],
+)
 def crawl(verticals: tuple[str, ...]) -> None:
     """Run discovery producers for specified verticals."""
     from provenmesh.crawler.producers.jobs import JobsProducer
@@ -66,7 +69,7 @@ def crawl(verticals: tuple[str, ...]) -> None:
                 logger.warning("unknown_vertical", vertical=v)
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        for v, result in zip(verticals, results):
+        for v, result in zip(verticals, results, strict=False):
             if isinstance(result, Exception):
                 logger.error("producer_failed", vertical=v, error=str(result))
             else:
@@ -201,7 +204,7 @@ def run(crawl_workers: int, extract_workers: int, resolve_workers: int) -> None:
 def migrate() -> None:
     """Run database migrations."""
     import subprocess
-    subprocess.run(["alembic", "upgrade", "head"], check=True)
+    subprocess.run(["alembic", "upgrade", "head"], check=True)  # noqa: S607
 
 
 def _setup_signal_handlers(shutdown_event: asyncio.Event) -> None:

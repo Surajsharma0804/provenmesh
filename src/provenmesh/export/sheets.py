@@ -15,12 +15,15 @@ Export rules:
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
-from provenmesh.graph.models import EntityRecord
 from provenmesh.graph.repository import EntityRepository
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import EXPORT_FAILURE_TOTAL, EXPORT_SUCCESS_TOTAL
 from provenmesh.storage.transactions import read_only_session
+
+if TYPE_CHECKING:
+    from provenmesh.graph.models import EntityRecord
 
 logger = get_logger(__name__)
 
@@ -158,16 +161,16 @@ class SheetsExporter:
         Lists every resolution decision for auditability.
         """
         async with read_only_session() as session:
-            repo = EntityRepository(session)
+            EntityRepository(session)
             # Get all resolved entities for the log
             from sqlalchemy import select
 
-            from provenmesh.graph.models import EntityRecord as ER
+            from provenmesh.graph.models import EntityRecord
 
             result = await session.execute(
-                select(ER)
-                .where(ER.resolution_method != "unresolved")
-                .order_by(ER.created_at)
+                select(EntityRecord)
+                .where(EntityRecord.resolution_method != "unresolved")
+                .order_by(EntityRecord.created_at)
                 .limit(50000)
             )
             entities = result.scalars().all()
