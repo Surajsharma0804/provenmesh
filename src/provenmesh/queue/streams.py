@@ -162,7 +162,7 @@ async def claim_stale_messages(
                     message_ids=[msg_id],
                 )
                 for claimed_id, claimed_data in result:
-                    cid = claimed_id.decode("utf-8") if isinstance(claimed_id, bytes) else str(claimed_id)
+                    cid = claimed_id.decode("utf-8") if isinstance(claimed_id, bytes) else str(claimed_id)  # noqa: E501
                     claimed.append((cid, claimed_data))
                     logger.warning(
                         "stale_message_claimed",

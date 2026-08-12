@@ -170,7 +170,7 @@ class QueueConsumer:
 
         while not shutdown_event.is_set():
             try:
-                processed = await self.process_batch()
+                await self.process_batch()
 
                 # Worker recycling (hardening §8)
                 if self._items_processed >= self._settings.worker_max_items_before_recycle:

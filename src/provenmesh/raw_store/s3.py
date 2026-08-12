@@ -7,9 +7,8 @@ re-extraction without re-scraping if the LLM schema changes.
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiobotocore.session
 
@@ -21,6 +20,9 @@ from provenmesh.raw_store.keys import (
     generate_metadata_key,
     generate_raw_key,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 logger = get_logger(__name__)
 

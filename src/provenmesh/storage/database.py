@@ -6,8 +6,8 @@ All database access goes through async sessions for non-blocking I/O.
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -18,6 +18,9 @@ from sqlalchemy.ext.asyncio import (
 
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 logger = get_logger(__name__)
 

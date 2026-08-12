@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import asyncio
 import random
+from typing import TYPE_CHECKING
 
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger
-from provenmesh.queue.messages import QueueMessage
 from provenmesh.queue.streams import add_to_stream, get_stream_depth
+
+if TYPE_CHECKING:
+    from provenmesh.queue.messages import QueueMessage
 
 logger = get_logger(__name__)
 
@@ -84,7 +87,7 @@ class QueueProducer:
 
             # Exponential backoff with jitter
             delay = min(
-                2 ** self._backoff_count + random.uniform(0, 1.0),
+                2 ** self._backoff_count + random.uniform(0, 1.0),  # noqa: S311
                 self._settings.backpressure_max_delay_seconds,
             )
             self._backoff_count += 1
