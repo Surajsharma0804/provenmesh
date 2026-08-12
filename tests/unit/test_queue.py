@@ -5,8 +5,6 @@ from __future__ import annotations
 from provenmesh.queue.messages import (
     CrawlMessage,
     DLQMessage,
-    ExtractionMessage,
-    QueueMessage,
 )
 
 
