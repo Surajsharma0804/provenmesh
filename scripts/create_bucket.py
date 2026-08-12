@@ -17,8 +17,8 @@ import aiobotocore.session
 async def create_bucket() -> None:
     """Create the raw evidence bucket in MinIO/S3."""
     endpoint = os.getenv("S3_ENDPOINT", "http://localhost:9000")
-    access_key = os.getenv("S3_ACCESS_KEY", "minioadmin")
-    secret_key = os.getenv("S3_SECRET_KEY", "minioadmin")
+    access_key = os.getenv("S3_ACCESS_KEY", "provenmesh")
+    secret_key = os.getenv("S3_SECRET_KEY", "provenmesh_dev")
     bucket_name = os.getenv("S3_BUCKET", "provenmesh-raw")
     region = os.getenv("S3_REGION", "us-east-1")
 

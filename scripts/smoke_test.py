@@ -71,8 +71,8 @@ async def test_minio() -> bool:
         async with session.create_client(
             "s3",
             endpoint_url=endpoint,
-            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "minioadmin"),
-            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "minioadmin"),
+            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "provenmesh"),
+            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "provenmesh_dev"),
             region_name="us-east-1",
         ) as client:
             bucket = os.getenv("S3_BUCKET", "provenmesh-raw")
