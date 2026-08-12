@@ -15,7 +15,7 @@ Three-layer dedup (v2 §37):
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger
@@ -53,7 +53,7 @@ def compute_content_hash(content: bytes | str) -> str:
 
 def _get_date_bucket() -> str:
     """Get today's date bucket key in YYYY-MM-DD format."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
 async def is_duplicate(
