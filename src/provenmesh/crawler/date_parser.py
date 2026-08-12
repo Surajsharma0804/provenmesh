@@ -11,7 +11,7 @@ Every parsed date carries a confidence flag: strict or heuristic.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import NamedTuple
 
 import dateparser
@@ -66,7 +66,7 @@ def parse_date(
         return None
 
     raw_date = raw_date.strip()
-    now = fetch_time or datetime.now(timezone.utc)
+    now = fetch_time or datetime.now(UTC)
 
     # Strategy 1: ISO 8601 / standard format (strictest)
     result = _try_iso_parse(raw_date)
@@ -126,7 +126,7 @@ def _try_iso_parse(raw: str) -> ParsedDate | None:
     try:
         dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         return ParsedDate(
             value=dt,
             confidence=DateConfidence.STRICT,
@@ -142,7 +142,7 @@ def _try_dateutil(raw: str) -> ParsedDate | None:
     try:
         dt = dateutil_parser.parse(raw, fuzzy=False)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         return ParsedDate(
             value=dt,
             confidence=DateConfidence.STRICT,
@@ -162,9 +162,7 @@ def _try_relative(raw: str, now: datetime) -> ParsedDate | None:
 
         if unit == "yesterday":
             dt = now - timedelta(days=1)
-        elif unit == "today":
-            dt = now
-        elif unit == "just_now":
+        elif unit == "today" or unit == "just_now":
             dt = now
         else:
             amount = int(match.group(1))
@@ -186,7 +184,7 @@ def _try_relative(raw: str, now: datetime) -> ParsedDate | None:
                 continue
 
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
 
         return ParsedDate(
             value=dt,
@@ -231,8 +229,8 @@ def is_within_freshness_window(
     reference_time: datetime | None = None,
 ) -> bool:
     """Check if a date falls within the freshness window."""
-    now = reference_time or datetime.now(timezone.utc)
+    now = reference_time or datetime.now(UTC)
     if date.tzinfo is None:
-        date = date.replace(tzinfo=timezone.utc)
+        date = date.replace(tzinfo=UTC)
     age = now - date
     return age <= timedelta(hours=max_age_hours)
