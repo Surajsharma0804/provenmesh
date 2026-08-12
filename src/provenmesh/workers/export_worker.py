@@ -18,13 +18,12 @@ import asyncio
 from typing import Any
 
 from provenmesh.config.constants import (
+    EXPORT_CONSUMER_GROUP,
     EXPORT_DLQ,
     EXPORT_STREAM,
-    EXPORT_CONSUMER_GROUP,
 )
 from provenmesh.config.settings import get_settings
-from provenmesh.export.mapping import RECORD_TYPE_TO_TAB, get_field_order
-from provenmesh.export.serializers import serialize_entity_row, serialize_mapping_log_row
+from provenmesh.export.mapping import RECORD_TYPE_TO_TAB
 from provenmesh.export.validate import validate_for_export
 from provenmesh.graph.repository import EntityRepository
 from provenmesh.observability.logging import get_logger
