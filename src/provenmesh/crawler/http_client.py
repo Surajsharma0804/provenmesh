@@ -15,17 +15,16 @@ from __future__ import annotations
 
 import random
 import time
-from typing import Any
 
 import aiohttp
 
-from provenmesh.config.constants import DEFAULT_HTTP_TIMEOUT, USER_AGENTS
+from provenmesh.config.constants import USER_AGENTS
 from provenmesh.config.settings import get_settings
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import (
     FETCH_LATENCY,
-    HTTP_429_TOTAL,
     HTTP_5XX_TOTAL,
+    HTTP_429_TOTAL,
 )
 
 logger = get_logger(__name__)
@@ -37,8 +36,15 @@ class FetchResult:
     """Result of an HTTP fetch operation."""
 
     __slots__ = (
-        "url", "status", "content", "content_type", "encoding",
-        "headers", "elapsed_ms", "fetch_tier", "error",
+        "content",
+        "content_type",
+        "elapsed_ms",
+        "encoding",
+        "error",
+        "fetch_tier",
+        "headers",
+        "status",
+        "url",
     )
 
     def __init__(
@@ -92,7 +98,7 @@ async def get_http_session() -> aiohttp.ClientSession:
 
     Connection pooling configured per hardening suggestion §7.
     """
-    global _session  # noqa: PLW0603
+    global _session
     if _session is None or _session.closed:
         settings = get_settings()
         connector = aiohttp.TCPConnector(
@@ -112,7 +118,7 @@ async def get_http_session() -> aiohttp.ClientSession:
 
 async def close_http_session() -> None:
     """Close the shared HTTP session."""
-    global _session  # noqa: PLW0603
+    global _session
     if _session and not _session.closed:
         await _session.close()
         _session = None
@@ -185,10 +191,9 @@ async def fetch_url(
         elapsed = (time.monotonic() - start) * 1000
         logger.warning("http_fetch_failed", url=url, error=str(e), elapsed_ms=elapsed)
         return FetchResult(url=url, error=str(e), elapsed_ms=elapsed, fetch_tier=1)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         elapsed = (time.monotonic() - start) * 1000
         logger.warning("http_fetch_timeout", url=url, elapsed_ms=elapsed)
         return FetchResult(url=url, error="timeout", elapsed_ms=elapsed, fetch_tier=1)
 
 
-import asyncio
