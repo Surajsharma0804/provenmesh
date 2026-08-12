@@ -12,8 +12,8 @@ This provides at-least-once delivery with idempotent consumers.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,13 +37,12 @@ async def unit_of_work() -> AsyncGenerator[AsyncSession, None]:
             # Commit happens automatically on successful exit
         # ONLY after this block exits successfully should you ACK the queue
     """
-    async with get_session() as session:
-        async with session.begin():
-            try:
-                yield session
-            except Exception:
-                logger.error("transaction_rollback")
-                raise
+    async with get_session() as session, session.begin():
+        try:
+            yield session
+        except Exception:
+            logger.error("transaction_rollback")
+            raise
             # If we get here without exception, commit happens via session.begin()
 
 
