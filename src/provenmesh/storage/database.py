@@ -6,8 +6,8 @@ All database access goes through async sessions for non-blocking I/O.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -27,7 +27,7 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 async def get_engine() -> AsyncEngine:
     """Get or create the async SQLAlchemy engine."""
-    global _engine  # noqa: PLW0603
+    global _engine
     if _engine is None:
         settings = get_settings()
         _engine = create_async_engine(
@@ -50,7 +50,7 @@ async def get_engine() -> AsyncEngine:
 
 async def get_session_factory() -> async_sessionmaker[AsyncSession]:
     """Get or create the async session factory."""
-    global _session_factory  # noqa: PLW0603
+    global _session_factory
     if _session_factory is None:
         engine = await get_engine()
         _session_factory = async_sessionmaker(
@@ -82,7 +82,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def close_database() -> None:
     """Dispose of the engine and all connections."""
-    global _engine, _session_factory  # noqa: PLW0603
+    global _engine, _session_factory
     if _engine is not None:
         await _engine.dispose()
         _engine = None
