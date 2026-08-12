@@ -1,4 +1,4 @@
-"""Domain relationship models (PDF §8.2, Appendix D, v2 §26–27).
+"""Domain relationship models (PDF §8.2, Appendix D, v2 §26-27).  # noqa: RUF002
 
 The graph is the product. Flat entity tables answer "what exists."
 Relationships answer "how does it connect" — which is the actual
@@ -8,10 +8,12 @@ product value proposition.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from provenmesh.domain.enums import RelationType
+if TYPE_CHECKING:
+    from provenmesh.domain.enums import RelationType
 
 
 class RelationshipEdge(BaseModel):
