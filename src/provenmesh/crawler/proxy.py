@@ -119,7 +119,7 @@ _proxy_pool: ProxyPool | None = None
 
 def get_proxy_pool() -> ProxyPool:
     """Get or initialize the proxy pool."""
-    global _proxy_pool  # noqa: PLW0603
+    global _proxy_pool
     if _proxy_pool is None:
         _proxy_pool = ProxyPool()
         settings = get_settings()
