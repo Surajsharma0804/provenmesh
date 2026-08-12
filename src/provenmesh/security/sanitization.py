@@ -85,9 +85,9 @@ def sanitize_entity_name(name: str) -> str:
 
     # Strip common legal suffixes
     legal_suffixes = [
-        r"\binc\.?\b", r"\bltd\.?\b", r"\bcorp\.?\b", r"\bllc\.?\b",
-        r"\bplc\.?\b", r"\bgmbh\b", r"\bco\.?\b", r"\binc\b",
-        r"\blimited\b", r"\bcorporation\b", r"\bcompany\b",
+        r"\binc\.?\s*$", r"\binc\.?(?=\s|$)", r"\bltd\.?(?=\s|$)", r"\bcorp\.?(?=\s|$)",
+        r"\bllc\.?(?=\s|$)", r"\bplc\.?(?=\s|$)", r"\bgmbh(?=\s|$)", r"\bco\.(?=\s|$)",
+        r"\blimited(?=\s|$)", r"\bcorporation(?=\s|$)", r"\bcompany(?=\s|$)",
     ]
     for suffix in legal_suffixes:
         name = re.sub(suffix, "", name, flags=re.IGNORECASE)
@@ -96,6 +96,6 @@ def sanitize_entity_name(name: str) -> str:
     name = re.sub(r"\s+", " ", name).strip()
 
     # Strip edge punctuation
-    name = name.strip(".,;:!?-—–")
+    name = name.strip(".,;:!?-\u2014\u2013")
 
-    return name
+    return name.strip()
