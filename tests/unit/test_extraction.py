@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from provenmesh.extraction.chunking import (
-    TextChunk,
     chunk_text,
     estimate_tokens,
-    extract_main_content,
 )
 from provenmesh.extraction.parser import (
     extract_evidenced_fields,
