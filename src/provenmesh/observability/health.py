@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime, timezone
-from http.server import BaseHTTPRequestHandler
+from datetime import UTC, datetime
 from typing import Any
 
 from provenmesh.observability.logging import get_logger
@@ -19,7 +18,7 @@ class HealthStatus:
     def __init__(self) -> None:
         self._ready = False
         self._alive = True
-        self._last_heartbeat: datetime = datetime.now(timezone.utc)
+        self._last_heartbeat: datetime = datetime.now(UTC)
         self._items_processed: int = 0
         self._errors: int = 0
         self._current_state: str = "starting"
@@ -38,7 +37,7 @@ class HealthStatus:
         self._current_state = "shutting_down"
 
     def heartbeat(self) -> None:
-        self._last_heartbeat = datetime.now(timezone.utc)
+        self._last_heartbeat = datetime.now(UTC)
 
     def record_processed(self) -> None:
         self._items_processed += 1
