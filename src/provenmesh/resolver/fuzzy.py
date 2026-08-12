@@ -72,7 +72,7 @@ def fuzzy_match_batch(
     )
 
     matches: list[FuzzyMatch] = []
-    for matched_name, score, key in results:
+    for _matched_name, score, key in results:
         matches.append(FuzzyMatch(
             matched_name=candidates[key],
             canonical_id=key,

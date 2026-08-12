@@ -20,7 +20,7 @@ LEGAL_SUFFIXES = re.compile(
 PARENS = re.compile(r"\s*\(.*?\)\s*")
 
 # Common joiners that should be collapsed
-JOINERS = re.compile(r"[-–—_]+")
+JOINERS = re.compile(r"[-–—_]+")  # noqa: RUF001
 
 
 def normalize_entity_name(name: str) -> str:
@@ -57,7 +57,7 @@ def normalize_entity_name(name: str) -> str:
     name = re.sub(r"\s+", " ", name).strip()
 
     # Strip edge punctuation
-    name = name.strip(".,;:!?-—–'\"")
+    name = name.strip(".,;:!?-—–'\"")  # noqa: RUF001
 
     return name
 

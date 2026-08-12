@@ -3,7 +3,7 @@
 Uses sentence-transformers for dense vector similarity.
 Thresholds:
     ≥ 0.88 → auto-accept match
-    0.75–0.88 → route to human review
+    0.75-0.88 → route to human review  # noqa: RUF002
     < 0.75 → treat as new entity
 """
 

@@ -1,6 +1,6 @@
 """Candidate retrieval — efficient pre-filtering before expensive matching (v2 §24).
 
-Instead of comparing every entity against every seed (O(n×m)):
+Instead of comparing every entity against every seed (O(nxm)):  # noqa: RUF002
     1. Normalized prefix index → O(1) lookup
     2. Token inverted index → O(k) where k = matching tokens
     3. pgvector ANN → O(log n) approximate nearest neighbors
