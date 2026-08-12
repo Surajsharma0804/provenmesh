@@ -12,7 +12,7 @@ Budget thresholds:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from provenmesh.config.constants import COST_COUNTER_KEY
 from provenmesh.config.settings import get_settings
@@ -37,7 +37,7 @@ class CostGuard:
     async def get_daily_usage(self) -> int:
         """Get current daily token usage from Redis."""
         r = await get_redis()
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         key = f"{COST_COUNTER_KEY}:{today}"
         usage = await r.get(key)
         return int(usage) if usage else 0
@@ -92,7 +92,7 @@ class CostGuard:
         Daily key auto-expires at midnight UTC.
         """
         r = await get_redis()
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         key = f"{COST_COUNTER_KEY}:{today}"
 
         await r.incrby(key, tokens)
@@ -119,7 +119,7 @@ class CostGuard:
                 return False
 
             r = await get_redis()
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            today = datetime.now(UTC).strftime("%Y-%m-%d")
             key = f"{COST_COUNTER_KEY}:{today}"
             await r.incrby(key, estimated_tokens)
             await r.expire(key, 86400 * 2)
@@ -135,6 +135,6 @@ class CostGuard:
         difference = estimated_tokens - actual_tokens
         if difference > 0:
             r = await get_redis()
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            today = datetime.now(UTC).strftime("%Y-%m-%d")
             key = f"{COST_COUNTER_KEY}:{today}"
             await r.decrby(key, difference)
