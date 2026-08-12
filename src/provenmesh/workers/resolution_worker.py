@@ -8,14 +8,14 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from provenmesh.config.constants import (
     RESOLUTION_CONSUMER_GROUP,
     RESOLUTION_DLQ,
     RESOLUTION_STREAM,
 )
-from provenmesh.graph.models import EntityRecord, EvidenceRow, RelationshipRecord
+from provenmesh.graph.models import EntityRecord, RelationshipRecord
 from provenmesh.graph.repository import (
     CrawlItemRepository,
     EntityRepository,
@@ -157,7 +157,7 @@ class ResolutionWorker:
                     source_name,
                     "RESOLVED",
                     canonical_id=resolution.canonical_id,
-                    resolved_at=datetime.now(timezone.utc),
+                    resolved_at=datetime.now(UTC),
                 )
 
         # Auto-promote to seed if enough independent sources (v2 §25)
