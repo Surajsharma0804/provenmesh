@@ -15,7 +15,7 @@ Uniqueness constraints enforce idempotency (v2 §27):
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
