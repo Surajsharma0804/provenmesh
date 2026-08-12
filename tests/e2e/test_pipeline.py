@@ -74,25 +74,31 @@ class TestFullPipeline:
 
     async def test_grounding_to_resolution(self):
         """Test grounded entity flows through resolution."""
-        from provenmesh.resolver.seeds import SeedStore
+        from provenmesh.resolver.seeds import SeedEntity, SeedStore
         from provenmesh.resolver.normalization import normalize_entity_name
 
         store = SeedStore()
-        store.add("startup_openai", "OpenAI", ["Open AI", "OpenAI Inc"])
+        store.add_seed(SeedEntity(
+            canonical_id="startup_openai",
+            canonical_name="OpenAI",
+            normalized_name="openai",
+            record_type="STARTUP",
+            aliases=["Open AI", "OpenAI Inc"],
+        ))
 
         # Exact match should work
-        result = store.find("OpenAI")
+        result = store.exact_match("OpenAI")
         assert result is not None
         assert result.canonical_id == "startup_openai"
 
         # Alias match
-        result = store.find("Open AI")
+        result = store.exact_match("Open AI")
         assert result is not None
         assert result.canonical_id == "startup_openai"
 
         # Normalized match
         normalized = normalize_entity_name("OpenAI Inc.")
-        result = store.find_normalized(normalized)
+        result = store.normalized_match(normalized)
         assert result is not None
 
     async def test_resolution_to_export_validation(self):
