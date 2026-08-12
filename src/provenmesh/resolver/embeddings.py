@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
 
 import numpy as np
 
@@ -46,7 +45,7 @@ def _get_model():
         return None
 
 
-def compute_embedding(text: str) -> Optional[np.ndarray]:
+def compute_embedding(text: str) -> np.ndarray | None:
     """Compute a dense embedding for a text string."""
     model = _get_model()
     if model is None:
@@ -68,7 +67,7 @@ def embedding_match(
     candidates: dict[str, tuple[str, np.ndarray]],
     accept_threshold: float = ACCEPT_THRESHOLD,
     review_threshold: float = REVIEW_THRESHOLD,
-) -> Optional[EmbeddingMatch]:
+) -> EmbeddingMatch | None:
     """Match a query against pre-computed candidate embeddings.
 
     Args:
@@ -82,7 +81,7 @@ def embedding_match(
     if query_embedding is None:
         return None
 
-    best_match: Optional[EmbeddingMatch] = None
+    best_match: EmbeddingMatch | None = None
     best_similarity = 0.0
 
     for canonical_id, (name, embedding) in candidates.items():
@@ -102,7 +101,7 @@ def embedding_match(
     return None
 
 
-def batch_compute_embeddings(texts: list[str]) -> list[Optional[np.ndarray]]:
+def batch_compute_embeddings(texts: list[str]) -> list[np.ndarray | None]:
     """Compute embeddings for a batch of texts efficiently."""
     model = _get_model()
     if model is None:
