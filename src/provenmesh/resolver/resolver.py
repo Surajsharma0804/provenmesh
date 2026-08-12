@@ -22,7 +22,7 @@ from rapidfuzz import fuzz
 from sentence_transformers import SentenceTransformer
 
 from provenmesh.config.settings import get_settings
-from provenmesh.domain.enums import ResolutionMethod, ReviewStatus
+from provenmesh.domain.enums import ResolutionMethod
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import (
     ENTITY_RESOLUTION_TOTAL,
