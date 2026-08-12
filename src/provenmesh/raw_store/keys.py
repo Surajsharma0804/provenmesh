@@ -9,7 +9,7 @@ Each raw payload stored as:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def generate_raw_key(
@@ -22,7 +22,7 @@ def generate_raw_key(
 
     Format: raw/{source}/{YYYY}/{MM}/{DD}/{content_hash}/payload.{ext}
     """
-    ts = timestamp or datetime.now(timezone.utc)
+    ts = timestamp or datetime.now(UTC)
     return (
         f"raw/{source_name}/"
         f"{ts.strftime('%Y/%m/%d')}/"
@@ -37,7 +37,7 @@ def generate_metadata_key(
     timestamp: datetime | None = None,
 ) -> str:
     """Generate S3 key for payload metadata."""
-    ts = timestamp or datetime.now(timezone.utc)
+    ts = timestamp or datetime.now(UTC)
     return (
         f"raw/{source_name}/"
         f"{ts.strftime('%Y/%m/%d')}/"
@@ -52,7 +52,7 @@ def generate_headers_key(
     timestamp: datetime | None = None,
 ) -> str:
     """Generate S3 key for response headers."""
-    ts = timestamp or datetime.now(timezone.utc)
+    ts = timestamp or datetime.now(UTC)
     return (
         f"raw/{source_name}/"
         f"{ts.strftime('%Y/%m/%d')}/"
