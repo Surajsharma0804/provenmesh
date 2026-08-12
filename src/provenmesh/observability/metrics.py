@@ -129,6 +129,19 @@ GROUNDING_FAILURE_TOTAL = Counter(
     ["field_type"],
 )
 
+# ─── Hallucination Detection Metrics ────────────────────────────
+
+HALLUCINATION_CHECK_TOTAL = Counter(
+    "provenmesh_hallucination_check_total",
+    "Total fields checked for hallucination",
+)
+
+HALLUCINATION_DETECTED_TOTAL = Counter(
+    "provenmesh_hallucination_detected_total",
+    "Hallucination flags detected",
+    ["severity"],  # critical, warning, info
+)
+
 # ─── Entity Resolution Metrics ──────────────────────────────────
 
 ENTITY_RESOLUTION_TOTAL = Counter(

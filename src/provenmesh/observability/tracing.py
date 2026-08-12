@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Generator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 from provenmesh.observability.logging import (
     get_correlation_id,
     get_logger,
     set_correlation_id,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logger = get_logger(__name__)
 

@@ -114,11 +114,11 @@ async def start_health_server(
             )
             writer.write(response.encode())
             await writer.drain()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
         finally:
             writer.close()
 
-    server = await asyncio.start_server(handle_request, "0.0.0.0", port)
+    server = await asyncio.start_server(handle_request, "0.0.0.0", port)  # noqa: S104
     logger.info("health_server_started", port=port)
     return server
