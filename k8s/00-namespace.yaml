@@ -1,0 +1,9 @@
+# ProvenMesh — Kubernetes Namespace
+# Isolates all resources under 'provenmesh' namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: provenmesh
+  labels:
+    app: provenmesh
+    environment: production

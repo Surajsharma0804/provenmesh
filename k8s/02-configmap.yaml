@@ -1,0 +1,44 @@
+# ProvenMesh — ConfigMap (non-secret configuration)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: provenmesh-config
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+data:
+  APP_ENV: "production"
+  S3_REGION: "us-east-1"
+  S3_BUCKET: "provenmesh-raw"
+
+  # LLM Cost Governance
+  LLM_DAILY_TOKEN_BUDGET: "5000000"
+  LLM_WARNING_THRESHOLD_PCT: "80"
+  LLM_HALT_THRESHOLD_PCT: "100"
+  LLM_CACHE_TTL_SECONDS: "86400"
+
+  # Crawling
+  PER_DOMAIN_RATE_LIMIT_RPS: "1"
+  MAX_DOMAIN_CONCURRENCY: "5"
+  MAX_GLOBAL_CONCURRENCY: "50"
+  MAX_FETCH_RETRIES: "5"
+  FETCH_TIMEOUT_SECONDS: "30"
+
+  # Entity Resolution
+  GROUNDING_THRESHOLD: "90"
+  FUZZY_THRESHOLD: "85"
+  EMBEDDING_ACCEPT_THRESHOLD: "0.88"
+  REVIEW_THRESHOLD: "0.75"
+
+  # Workers
+  WORKER_MAX_ITEMS_BEFORE_RECYCLE: "1000"
+  WORKER_HEALTH_CHECK_PORT: "8080"
+
+  # Backpressure
+  QUEUE_HIGH_WATER_MARK: "10000"
+  QUEUE_LOW_WATER_MARK: "5000"
+  BACKPRESSURE_MAX_DELAY_SECONDS: "30"
+
+  # Circuit Breaker
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: "5"
+  CIRCUIT_BREAKER_RECOVERY_TIMEOUT_SECONDS: "60"

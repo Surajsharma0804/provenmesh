@@ -1,0 +1,178 @@
+# ProvenMesh — Database Migration Job
+# Run once after deployment to setup the database schema
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: migration
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: provenmesh
+        component: migration
+    spec:
+      containers:
+        - name: migrate
+          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+          command: ["python", "-m", "provenmesh", "migrate"]
+          env:
+            - name: POSTGRES_DSN
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_DB
+      restartPolicy: Never
+
+---
+# ProvenMesh — Crawl CronJob
+# Runs the crawl pipeline daily at 2 AM UTC
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-crawl
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: crawl-scheduler
+spec:
+  schedule: "0 2 * * *"  # 2 AM UTC daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: provenmesh
+            component: crawl-job
+        spec:
+          containers:
+            - name: crawl
+              image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+              command: ["python", "-m", "provenmesh", "crawl"]
+              envFrom:
+                - configMapRef:
+                    name: provenmesh-config
+              env:
+                - name: REDIS_URL
+                  value: "redis://redis.provenmesh.svc.cluster.local:6379/0"
+                - name: POSTGRES_DSN
+                  value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_PASSWORD
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_DB
+                - name: GEMINI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: GEMINI_API_KEY
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
+          restartPolicy: Never
+
+---
+# ProvenMesh — Export CronJob
+# Exports verified data to Google Sheets daily at 6 AM UTC
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-export
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: export-scheduler
+spec:
+  schedule: "0 6 * * *"  # 6 AM UTC daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: provenmesh
+            component: export-job
+        spec:
+          containers:
+            - name: export
+              image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+              command: ["python", "-m", "provenmesh", "export"]
+              env:
+                - name: POSTGRES_DSN
+                  value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_PASSWORD
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: POSTGRES_DB
+                - name: GOOGLE_SHEETS_SPREADSHEET_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: provenmesh-secrets
+                      key: GOOGLE_SHEETS_SPREADSHEET_ID
+                - name: GOOGLE_SHEETS_CREDENTIALS_JSON
+                  value: "/secrets/google/service_account.json"
+              volumeMounts:
+                - name: google-creds
+                  mountPath: /secrets/google
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: google-creds
+              secret:
+                secretName: google-sheets-credentials
+          restartPolicy: Never

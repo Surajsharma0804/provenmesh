@@ -1,0 +1,345 @@
+# ProvenMesh — Worker Deployments
+# All 4 worker types as separate Deployments for independent scaling
+
+# ─── Shared environment template ──────────────────────────────────
+# Each worker gets: database, redis, S3, LLM keys, pipeline config
+
+---
+# ─── Crawler Worker ──────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-worker
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: crawler-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: crawler-worker
+  template:
+    metadata:
+      labels:
+        app: provenmesh
+        component: crawler-worker
+    spec:
+      containers:
+        - name: crawler-worker
+          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+          command: ["python", "-m", "provenmesh.workers.crawl_worker"]
+          envFrom:
+            - configMapRef:
+                name: provenmesh-config
+          env:
+            - name: REDIS_URL
+              value: "redis://redis.provenmesh.svc.cluster.local:6379/0"
+            - name: POSTGRES_DSN
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+            - name: S3_ENDPOINT
+              value: "https://s3.us-east-1.amazonaws.com"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_DB
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: S3_ACCESS_KEY
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: S3_SECRET_KEY
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: GEMINI_API_KEY
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      restartPolicy: Always
+
+---
+# ─── Extraction Worker ───────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extraction-worker
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: extraction-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: extraction-worker
+  template:
+    metadata:
+      labels:
+        app: provenmesh
+        component: extraction-worker
+    spec:
+      containers:
+        - name: extraction-worker
+          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+          command: ["python", "-m", "provenmesh.workers.extraction_worker"]
+          envFrom:
+            - configMapRef:
+                name: provenmesh-config
+          env:
+            - name: REDIS_URL
+              value: "redis://redis.provenmesh.svc.cluster.local:6379/0"
+            - name: POSTGRES_DSN
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+            - name: S3_ENDPOINT
+              value: "https://s3.us-east-1.amazonaws.com"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_DB
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: S3_ACCESS_KEY
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: S3_SECRET_KEY
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: GEMINI_API_KEY
+            - name: GOOGLE_SHEETS_CREDENTIALS_JSON
+              value: "/secrets/google/service_account.json"
+          volumeMounts:
+            - name: google-creds
+              mountPath: /secrets/google
+              readOnly: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: google-creds
+          secret:
+            secretName: google-sheets-credentials
+      restartPolicy: Always
+
+---
+# ─── Resolver Worker ─────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resolver-worker
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: resolver-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: resolver-worker
+  template:
+    metadata:
+      labels:
+        app: provenmesh
+        component: resolver-worker
+    spec:
+      containers:
+        - name: resolver-worker
+          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+          command: ["python", "-m", "provenmesh.workers.resolution_worker"]
+          envFrom:
+            - configMapRef:
+                name: provenmesh-config
+          env:
+            - name: REDIS_URL
+              value: "redis://redis.provenmesh.svc.cluster.local:6379/0"
+            - name: POSTGRES_DSN
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_DB
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: GEMINI_API_KEY
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      restartPolicy: Always
+
+---
+# ─── Export Worker ────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: export-worker
+  namespace: provenmesh
+  labels:
+    app: provenmesh
+    component: export-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: export-worker
+  template:
+    metadata:
+      labels:
+        app: provenmesh
+        component: export-worker
+    spec:
+      containers:
+        - name: export-worker
+          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/provenmesh:latest
+          command: ["python", "-m", "provenmesh.workers.export_worker"]
+          envFrom:
+            - configMapRef:
+                name: provenmesh-config
+          env:
+            - name: REDIS_URL
+              value: "redis://redis.provenmesh.svc.cluster.local:6379/0"
+            - name: POSTGRES_DSN
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.provenmesh.svc.cluster.local:5432/$(POSTGRES_DB)"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: POSTGRES_DB
+            - name: GOOGLE_SHEETS_SPREADSHEET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: provenmesh-secrets
+                  key: GOOGLE_SHEETS_SPREADSHEET_ID
+            - name: GOOGLE_SHEETS_CREDENTIALS_JSON
+              value: "/secrets/google/service_account.json"
+          volumeMounts:
+            - name: google-creds
+              mountPath: /secrets/google
+              readOnly: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: google-creds
+          secret:
+            secretName: google-sheets-credentials
+      restartPolicy: Always
