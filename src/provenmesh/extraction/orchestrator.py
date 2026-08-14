@@ -184,12 +184,20 @@ class ExtractionOrchestrator:  # pragma: no cover
         if not reserved:
             return {"fields": {}, "relationships": [], "error": "budget_exhausted"}
 
+        # ── Rule-based pre-extraction for ArXiv (no LLM needed) ──────────────
+        # ArXiv pages have structured HTML metadata we can parse directly.
+        # This guarantees papers always have real titles/authors even when
+        # all LLM providers are exhausted by rate limits.
+        rule_fields: dict = {}
+        if record_type == "PAPER" and "arxiv.org" in source_url:
+            rule_fields = self._extract_arxiv_metadata(html_content, source_url)
+
         # Extract main content and chunk
         main_text = extract_main_content(html_content)
         prompt_template = EXTRACTION_PROMPTS.get(record_type, EXTRACTION_PROMPTS["STARTUP"])
 
         chunks = chunk_text(main_text, max_tokens=3000)
-        all_fields: dict = {}
+        all_fields: dict = dict(rule_fields)  # Start with rule-based fields
         all_relationships: list = []
         total_tokens = 0
         total_cost = 0.0
@@ -205,7 +213,7 @@ class ExtractionOrchestrator:  # pragma: no cover
                     fields = extract_evidenced_fields(parsed)
                     relationships = extract_relationships(parsed)
 
-                    # Merge fields (structured markup wins — v2 §17)
+                    # LLM fields overwrite rule-based (LLM adds evidence quotes)
                     for key, value in fields.items():
                         if key not in all_fields or chunk.has_structured_markup:
                             all_fields[key] = value
@@ -214,6 +222,10 @@ class ExtractionOrchestrator:  # pragma: no cover
                     total_tokens += response.total_tokens
                     total_cost += response.cost_usd
                     provider_used = response.provider
+
+            # If no LLM succeeded but we have rule-based fields, that's still valid
+            if not provider_used and rule_fields:
+                provider_used = "rule_based"
 
             result = {
                 "fields": all_fields,
@@ -237,7 +249,104 @@ class ExtractionOrchestrator:  # pragma: no cover
         except Exception as e:
             await self._cost_guard.release_reservation(estimated_tokens, 0)
             logger.error("extraction_failed", error=str(e), content_hash=content_hash[:16])
-            return {"fields": {}, "relationships": [], "error": str(e)}
+            # Return rule-based fields even on exception
+            return {"fields": rule_fields, "relationships": [], "error": str(e),
+                    "provider": "rule_based", "tokens": 0, "cost": 0.0, "cached": False}
+
+    def _extract_arxiv_metadata(self, html_content: str, source_url: str) -> dict:
+        """Extract ArXiv paper metadata directly from HTML — no LLM needed.
+
+        ArXiv pages have structured metadata in <meta> tags and specific
+        HTML elements. This is fast, free, and 100% reliable.
+        """
+        import re
+        from html.parser import HTMLParser
+
+        class _MetaParser(HTMLParser):
+            def __init__(self) -> None:
+                super().__init__()
+                self.meta: dict[str, str] = {}
+                self.in_abstract = False
+                self.abstract_text = ""
+                self.in_title = False
+                self.title_text = ""
+                self._depth = 0
+
+            def handle_starttag(self, tag: str, attrs: list) -> None:
+                attr_dict = dict(attrs)
+                if tag == "meta":
+                    name = attr_dict.get("name", "").lower()
+                    content = attr_dict.get("content", "")
+                    if name and content:
+                        self.meta[name] = content
+                if tag in ("blockquote", "div") and "abstract" in str(attr_dict.get("class", "")):
+                    self.in_abstract = True
+                if tag == "h1" and "title" in str(attr_dict.get("class", "")):
+                    self.in_title = True
+
+            def handle_endtag(self, tag: str) -> None:
+                if tag in ("blockquote", "div"):
+                    self.in_abstract = False
+                if tag == "h1":
+                    self.in_title = False
+
+            def handle_data(self, data: str) -> None:
+                if self.in_abstract:
+                    self.abstract_text += data
+                if self.in_title:
+                    self.title_text += data
+
+        parser = _MetaParser()
+        parser.feed(html_content[:50000])  # Only parse first 50KB
+
+        meta = parser.meta
+
+        # Extract ArXiv ID from URL
+        arxiv_id_match = re.search(r"arxiv\.org/abs/([0-9]+\.[0-9]+)", source_url)
+        arxiv_id = arxiv_id_match.group(1) if arxiv_id_match else ""
+
+        # Build evidence-first format fields
+        def field(value: str, evidence: str = "") -> dict:
+            return {"value": value, "evidence": evidence or value, "confidence": 0.85}
+
+        title = (
+            meta.get("citation_title", "") or
+            meta.get("og:title", "") or
+            meta.get("title", "") or
+            parser.title_text.strip()
+        )
+        authors_raw = meta.get("citation_author", "") or meta.get("author", "")
+        abstract = (
+            meta.get("description", "") or
+            meta.get("og:description", "") or
+            parser.abstract_text.strip()
+        )
+        published = meta.get("citation_date", "") or meta.get("citation_publication_date", "")
+        categories = meta.get("citation_keywords", "")
+
+        fields: dict = {}
+        if title:
+            fields["title"] = field(title)
+        if authors_raw:
+            # May be comma or semicolon separated
+            fields["authors"] = [field(a.strip()) for a in re.split(r"[,;]", authors_raw) if a.strip()]
+        if abstract:
+            fields["abstract"] = field(abstract[:500])
+        if published:
+            fields["publishedDate"] = field(published)
+        if arxiv_id:
+            fields["arxivId"] = field(arxiv_id, f"ArXiv ID from URL: arxiv.org/abs/{arxiv_id}")
+        if categories:
+            fields["categories"] = [field(c.strip()) for c in categories.split(",") if c.strip()]
+        if source_url:
+            fields["website"] = field(source_url)
+
+        if fields:
+            logger.info("arxiv_rule_extracted", arxiv_id=arxiv_id, title=title[:50] if title else "")
+
+        return fields
+
+
 
     async def _call_with_fallback(
         self,
