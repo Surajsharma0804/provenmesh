@@ -89,8 +89,8 @@ class Settings(BaseSettings):
     backpressure_max_delay_seconds: int = 30
 
     # ─── Circuit Breaker (PDF §5.1) ─────────────────────────────
-    circuit_breaker_failure_threshold: int = 5
-    circuit_breaker_recovery_timeout_seconds: int = 60
+    circuit_breaker_failure_threshold: int = 20   # raised: 5 was too low for high-volume runs
+    circuit_breaker_recovery_timeout_seconds: int = 30  # faster recovery
 
     # ─── Retry ──────────────────────────────────────────────────
     retry_max_attempts: int = 5
