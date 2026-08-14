@@ -1,0 +1,36 @@
+﻿services:
+  - type: worker
+    name: provenmesh-pipeline
+    runtime: python
+    buildCommand: pip install -e .
+    startCommand: python -m provenmesh.main run --crawl-workers 2 --extract-workers 1 --resolve-workers 1 --auto-export --export-interval 20
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GOOGLE_SHEETS_SPREADSHEET_ID
+        sync: false
+      - key: GOOGLE_SHEETS_CREDENTIALS_JSON
+        sync: false
+      - key: POSTGRES_DSN
+        fromDatabase:
+          name: provenmesh-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: provenmesh-redis
+          type: redis
+          property: connectionString
+
+databases:
+  - name: provenmesh-db
+    plan: free
+
+  - name: provenmesh-redis
+    plan: free
+    type: redis
