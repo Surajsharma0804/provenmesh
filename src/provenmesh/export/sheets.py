@@ -157,20 +157,32 @@ class SheetsExporter:
             existing = {s["properties"]["title"]: s["properties"]["sheetId"]
                         for s in sheet_meta.get("sheets", [])}
 
-        # ── Tab color scheme (RGB 0-1 scale) ──────────────────────────────────
-        # Each tab gets a unique header color for instant visual navigation
-        _TAB_COLORS = {
-            "Startups":           {"red": 0.055, "green": 0.647, "blue": 0.914},   # cyan
-            "Products":           {"red": 0.988, "green": 0.604, "blue": 0.094},   # orange
-            "Papers":             {"red": 0.545, "green": 0.361, "blue": 0.965},   # purple
-            "Jobs":               {"red": 0.133, "green": 0.773, "blue": 0.369},   # green
-            "News":               {"red": 0.988, "green": 0.318, "blue": 0.318},   # red
-            "Entity Mapping Log": {"red": 0.392, "green": 0.392, "blue": 0.392},   # grey
-        }
-        _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
-        _DARK  = {"red": 0.051, "green": 0.071, "blue": 0.090}  # #0D1217
+        # ─── Professional formatting constants ───────────────────────────────────
+        # Single clean dark-grey header across ALL tabs — no bright colors
+        _HEADER_BG   = {"red": 0.176, "green": 0.212, "blue": 0.267}   # #2D3644 charcoal
+        _HEADER_TEXT = {"red": 1.0, "green": 1.0, "blue": 1.0}          # white
+        _DATA_BG     = {"red": 1.0, "green": 1.0, "blue": 1.0}          # pure white
+        _ALT_BG      = {"red": 0.973, "green": 0.976, "blue": 0.980}    # #F8F9FA very subtle
 
-        # Clear data, write headers, and format each tab
+        # Column pixel widths: key = column header substring → pixel width
+        _COL_WIDTHS: dict[str, int] = {
+            "url":          280,
+            "website":      280,
+            "source":       200,
+            "abstract":     320,
+            "description":  280,
+            "features":     250,
+            "tech stack":   220,
+            "investors":    220,
+            "affiliations": 220,
+            "canonical":    200,
+            "entity":       180,
+            "summary":      280,
+            "headline":     280,
+            "title":        280,
+        }
+        _DEFAULT_WIDTH = 150
+
         for tab_name in tab_names:
             tab_headers = headers.get(tab_name, [])
             if not tab_headers:
@@ -178,13 +190,13 @@ class SheetsExporter:
             sheet_id = existing.get(tab_name)
 
             try:
-                # 1. Clear existing data
+                # ── Step 1: Clear data values ─────────────────────────────────
                 service.spreadsheets().values().clear(
                     spreadsheetId=spreadsheet_id,
                     range=f"{tab_name}!A:ZZ",
                 ).execute()
 
-                # 2. Write header row
+                # ── Step 2: Write header row ──────────────────────────────────
                 service.spreadsheets().values().update(
                     spreadsheetId=spreadsheet_id,
                     range=f"{tab_name}!A1",
@@ -193,99 +205,155 @@ class SheetsExporter:
                 ).execute()
                 logger.info("sheet_header_written", tab=tab_name)
 
-                # 3. Apply rich formatting — split into two separate batches
-                #    Batch A: header color + bold + freeze + auto-resize (never fails)
-                #    Batch B: alternating row banding (may fail if already set — OK)
-                if sheet_id is not None:
-                    header_color = _TAB_COLORS.get(tab_name, _DARK)
-                    num_cols = len(tab_headers)
+                if sheet_id is None:
+                    continue
 
-                    # ── Batch A: critical formatting (always apply) ────────────
-                    batch_a = [
-                        # Bold white text + colored background on header row
-                        {
-                            "repeatCell": {
-                                "range": {
-                                    "sheetId": sheet_id,
-                                    "startRowIndex": 0,
-                                    "endRowIndex": 1,
-                                    "startColumnIndex": 0,
-                                    "endColumnIndex": num_cols,
-                                },
-                                "cell": {
-                                    "userEnteredFormat": {
-                                        "backgroundColor": header_color,
-                                        "textFormat": {
-                                            "bold": True,
-                                            "foregroundColor": _WHITE,
-                                            "fontSize": 11,
-                                            "fontFamily": "Google Sans",
-                                        },
-                                        "horizontalAlignment": "CENTER",
-                                        "verticalAlignment": "MIDDLE",
-                                        "wrapStrategy": "CLIP",
-                                    }
-                                },
-                                "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
-                            }
-                        },
-                        # Freeze header row
-                        {
-                            "updateSheetProperties": {
-                                "properties": {
-                                    "sheetId": sheet_id,
-                                    "gridProperties": {"frozenRowCount": 1},
-                                },
-                                "fields": "gridProperties.frozenRowCount",
-                            }
-                        },
-                        # Auto-resize columns to fit content
-                        {
-                            "autoResizeDimensions": {
-                                "dimensions": {
-                                    "sheetId": sheet_id,
-                                    "dimension": "COLUMNS",
-                                    "startIndex": 0,
-                                    "endIndex": num_cols,
-                                }
-                            }
-                        },
-                    ]
-                    try:
-                        service.spreadsheets().batchUpdate(
-                            spreadsheetId=spreadsheet_id,
-                            body={"requests": batch_a},
-                        ).execute()
-                        logger.info("sheet_formatted", tab=tab_name)
-                    except Exception as fe:
-                        logger.warning("sheet_format_failed", tab=tab_name, error=str(fe)[:80])
+                num_cols = len(tab_headers)
 
-                    # ── Batch B: alternating row banding (non-fatal if fails) ──
-                    batch_b = [{
-                        "addBanding": {
-                            "bandedRange": {
-                                "range": {
-                                    "sheetId": sheet_id,
-                                    "startRowIndex": 1,
-                                    "startColumnIndex": 0,
-                                    "endColumnIndex": num_cols,
-                                },
-                                "rowProperties": {
-                                    # Subtle: white / very light grey — NOT the bright tab color
-                                    "firstBandColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-                                    "secondBandColor": {"red": 0.969, "green": 0.973, "blue": 0.980},
-                                },
-                            }
+                # ── Step 3: NUKE all existing cell formatting & banding ───────
+                # This eliminates the persistent bright-color overlay from old runs.
+                nuke_requests: list[dict] = [
+                    # Clear ALL cell formatting on the entire sheet
+                    {
+                        "updateCells": {
+                            "range": {"sheetId": sheet_id},
+                            "fields": "userEnteredFormat",
                         }
-                    }]
-                    try:
-                        service.spreadsheets().batchUpdate(
-                            spreadsheetId=spreadsheet_id,
-                            body={"requests": batch_b},
-                        ).execute()
-                    except Exception:
-                        pass  # Already banded — silently skip
+                    },
+                ]
+                # Get banded ranges for this sheet and delete them all
+                try:
+                    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+                    for sheet in meta.get("sheets", []):
+                        if sheet["properties"]["sheetId"] == sheet_id:
+                            for br in sheet.get("bandedRanges", []):
+                                nuke_requests.append({
+                                    "deleteBanding": {"bandedRangeId": br["bandedRangeId"]}
+                                })
+                except Exception:
+                    pass
 
+                service.spreadsheets().batchUpdate(
+                    spreadsheetId=spreadsheet_id,
+                    body={"requests": nuke_requests},
+                ).execute()
+
+                # ── Step 4: Apply clean professional formatting ───────────────
+                # Determine column widths
+                col_width_requests = []
+                for col_idx, col_name in enumerate(tab_headers):
+                    width = _DEFAULT_WIDTH
+                    col_lower = col_name.lower()
+                    for keyword, w in _COL_WIDTHS.items():
+                        if keyword in col_lower:
+                            width = w
+                            break
+                    col_width_requests.append({
+                        "updateDimensionProperties": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "dimension": "COLUMNS",
+                                "startIndex": col_idx,
+                                "endIndex": col_idx + 1,
+                            },
+                            "properties": {"pixelSize": width},
+                            "fields": "pixelSize",
+                        }
+                    })
+
+                fmt_requests: list[dict] = [
+                    # Dark-grey header row — bold white text, left-aligned
+                    {
+                        "repeatCell": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "startRowIndex": 0,
+                                "endRowIndex": 1,
+                                "startColumnIndex": 0,
+                                "endColumnIndex": num_cols,
+                            },
+                            "cell": {
+                                "userEnteredFormat": {
+                                    "backgroundColor": _HEADER_BG,
+                                    "textFormat": {
+                                        "bold": True,
+                                        "foregroundColor": _HEADER_TEXT,
+                                        "fontSize": 10,
+                                    },
+                                    "horizontalAlignment": "LEFT",
+                                    "verticalAlignment": "MIDDLE",
+                                    "wrapStrategy": "CLIP",
+                                }
+                            },
+                            "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+                        }
+                    },
+                    # Data rows: plain white background, left-aligned, no wrap
+                    {
+                        "repeatCell": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "startRowIndex": 1,
+                                "startColumnIndex": 0,
+                                "endColumnIndex": num_cols,
+                            },
+                            "cell": {
+                                "userEnteredFormat": {
+                                    "backgroundColor": _DATA_BG,
+                                    "textFormat": {
+                                        "bold": False,
+                                        "fontSize": 10,
+                                    },
+                                    "horizontalAlignment": "LEFT",
+                                    "verticalAlignment": "TOP",
+                                    "wrapStrategy": "CLIP",
+                                }
+                            },
+                            "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+                        }
+                    },
+                    # Row height for data rows (compact: 21px)
+                    {
+                        "updateDimensionProperties": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "dimension": "ROWS",
+                                "startIndex": 1,
+                            },
+                            "properties": {"pixelSize": 21},
+                            "fields": "pixelSize",
+                        }
+                    },
+                    # Header row height (taller: 28px)
+                    {
+                        "updateDimensionProperties": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "dimension": "ROWS",
+                                "startIndex": 0,
+                                "endIndex": 1,
+                            },
+                            "properties": {"pixelSize": 28},
+                            "fields": "pixelSize",
+                        }
+                    },
+                    # Freeze header row
+                    {
+                        "updateSheetProperties": {
+                            "properties": {
+                                "sheetId": sheet_id,
+                                "gridProperties": {"frozenRowCount": 1},
+                            },
+                            "fields": "gridProperties.frozenRowCount",
+                        }
+                    },
+                ] + col_width_requests
+
+                service.spreadsheets().batchUpdate(
+                    spreadsheetId=spreadsheet_id,
+                    body={"requests": fmt_requests},
+                ).execute()
+                logger.info("sheet_formatted", tab=tab_name)
 
             except Exception as e:
                 logger.warning("sheet_header_failed", tab=tab_name, error=str(e))
