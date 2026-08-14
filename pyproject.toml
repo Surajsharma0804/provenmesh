@@ -203,3 +203,14 @@ exclude_lines = [
     "^\\s*\\.\\.\\.\\s*$",
 ]
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Pyrefly (type checker used by Antigravity IDE)
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.pyrefly]
+# Exclude files where Pyrefly's line-by-line inmemory analysis generates
+# hundreds of false-positive parse errors (deeply nested dict-building code).
+# These files are fully covered by ruff + mypy instead.
+project_excludes = [
+    "src/provenmesh/export/sheets.py",
+    "src/provenmesh/extraction/orchestrator.py",
+]

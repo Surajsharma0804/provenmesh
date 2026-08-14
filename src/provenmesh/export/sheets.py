@@ -551,7 +551,7 @@ class SheetsExporter:
             except Exception as tab_err:
                 logger.warning("sheet_tab_check_failed", tab=tab_name, error=str(tab_err))
 
-            body = {"values": [[str(c) for c in row] for row in rows]}
+            body = {"values": [list(row) for row in rows]}
             service.spreadsheets().values().append(
                 spreadsheetId=spreadsheet_id,
                 range=f"{tab_name}!A1",
