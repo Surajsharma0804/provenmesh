@@ -147,7 +147,7 @@ class SheetsExporter:
                 create_requests.append({"addSheet": {"properties": {"title": tab_name}}})
 
         if create_requests:
-            result = service.spreadsheets().batchUpdate(
+            service.spreadsheets().batchUpdate(
                 spreadsheetId=spreadsheet_id,
                 body={"requests": create_requests},
             ).execute()
@@ -157,15 +157,14 @@ class SheetsExporter:
             existing = {s["properties"]["title"]: s["properties"]["sheetId"]
                         for s in sheet_meta.get("sheets", [])}
 
-        # ─── Professional formatting constants ───────────────────────────────────
+        # ─── Professional formatting constants ─────────────────────────────
         # Single clean dark-grey header across ALL tabs — no bright colors
-        _HEADER_BG   = {"red": 0.176, "green": 0.212, "blue": 0.267}   # #2D3644 charcoal
-        _HEADER_TEXT = {"red": 1.0, "green": 1.0, "blue": 1.0}          # white
-        _DATA_BG     = {"red": 1.0, "green": 1.0, "blue": 1.0}          # pure white
-        _ALT_BG      = {"red": 0.973, "green": 0.976, "blue": 0.980}    # #F8F9FA very subtle
+        header_bg   = {"red": 0.176, "green": 0.212, "blue": 0.267}  # #2D3644 charcoal
+        header_text = {"red": 1.0,   "green": 1.0,   "blue": 1.0}    # white
+        data_bg     = {"red": 1.0,   "green": 1.0,   "blue": 1.0}    # pure white
 
-        # Column pixel widths: key = column header substring → pixel width
-        _COL_WIDTHS: dict[str, int] = {
+        # Column pixel widths: key = column header substring -> pixel width
+        col_width_map = {
             "url":          280,
             "website":      280,
             "source":       200,
@@ -181,7 +180,7 @@ class SheetsExporter:
             "headline":     280,
             "title":        280,
         }
-        _DEFAULT_WIDTH = 150
+        default_col_width = 150
 
         for tab_name in tab_names:
             tab_headers = headers.get(tab_name, [])
@@ -190,13 +189,13 @@ class SheetsExporter:
             sheet_id = existing.get(tab_name)
 
             try:
-                # ── Step 1: Clear data values ─────────────────────────────────
+                # ── Step 1: Clear data values ──────────────────────────────
                 service.spreadsheets().values().clear(
                     spreadsheetId=spreadsheet_id,
                     range=f"{tab_name}!A:ZZ",
                 ).execute()
 
-                # ── Step 2: Write header row ──────────────────────────────────
+                # ── Step 2: Write header row ───────────────────────────────
                 service.spreadsheets().values().update(
                     spreadsheetId=spreadsheet_id,
                     range=f"{tab_name}!A1",
@@ -205,10 +204,9 @@ class SheetsExporter:
                 ).execute()
                 logger.info("sheet_header_written", tab=tab_name)
 
+                num_cols = len(tab_headers)
                 if sheet_id is None:
                     continue
-
-                num_cols = len(tab_headers)
 
                 # ── Step 3: NUKE all existing cell formatting & banding ───────
                 # This eliminates the persistent bright-color overlay from old runs.
@@ -238,15 +236,15 @@ class SheetsExporter:
                     body={"requests": nuke_requests},
                 ).execute()
 
-                # ── Step 4: Apply clean professional formatting ───────────────
-                # Determine column widths
+                # ── Step 4: Apply clean professional formatting ─────────────
+                # Build per-column width requests
                 col_width_requests = []
                 for col_idx, col_name in enumerate(tab_headers):
-                    width = _DEFAULT_WIDTH
+                    width = default_col_width
                     col_lower = col_name.lower()
-                    for keyword, w in _COL_WIDTHS.items():
+                    for keyword, kw_width in col_width_map.items():
                         if keyword in col_lower:
-                            width = w
+                            width = kw_width
                             break
                     col_width_requests.append({
                         "updateDimensionProperties": {
@@ -261,7 +259,7 @@ class SheetsExporter:
                         }
                     })
 
-                fmt_requests: list[dict] = [
+                fmt_requests = [
                     # Dark-grey header row — bold white text, left-aligned
                     {
                         "repeatCell": {
@@ -274,10 +272,10 @@ class SheetsExporter:
                             },
                             "cell": {
                                 "userEnteredFormat": {
-                                    "backgroundColor": _HEADER_BG,
+                                    "backgroundColor": header_bg,
                                     "textFormat": {
                                         "bold": True,
-                                        "foregroundColor": _HEADER_TEXT,
+                                        "foregroundColor": header_text,
                                         "fontSize": 10,
                                     },
                                     "horizontalAlignment": "LEFT",
@@ -299,7 +297,7 @@ class SheetsExporter:
                             },
                             "cell": {
                                 "userEnteredFormat": {
-                                    "backgroundColor": _DATA_BG,
+                                    "backgroundColor": data_bg,
                                     "textFormat": {
                                         "bold": False,
                                         "fontSize": 10,
@@ -395,12 +393,12 @@ class SheetsExporter:
         content = entity.content or {}
         row: list[str] = []
 
-        # Common fields
-        row.append(str(entity.canonical_id))
-        row.append(str(entity.entity_name))
-        row.append(str(entity.record_type))
-        row.append(str(entity.verification_status))
-        row.append(str(entity.source_url))
+        # Common fields (these are already str columns in the DB)
+        row.append(entity.canonical_id or "")
+        row.append(entity.entity_name or "")
+        row.append(entity.record_type or "")
+        row.append(entity.verification_status or "")
+        row.append(entity.source_url or "")
 
         # Type-specific fields
         for field_name in self._get_field_order(entity.record_type):
@@ -451,7 +449,6 @@ class SheetsExporter:
         Lists every resolution decision for auditability.
         """
         async with read_only_session() as session:
-            EntityRepository(session)
             # Get all resolved entities for the log
             from sqlalchemy import select
 
