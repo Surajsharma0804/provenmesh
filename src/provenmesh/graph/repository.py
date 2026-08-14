@@ -87,21 +87,44 @@ class EntityRepository:
         batch_size: int = 500,
         offset: int = 0,
     ) -> Sequence[EntityRecord]:
-        """Get entities ready for export (grounded or partial + schema-valid)."""
+        """Get entities ready for export.
+
+        For most types: verification_status in (grounded, partial) + schema_valid.
+        For PAPER: also include unverified records that have schema_valid=True and
+        a real entity_name (not 'None') — papers are often crawled successfully but
+        can't get LLM-verified due to ArXiv rate limits, so we show what we have.
+        """
+        from sqlalchemy import or_, and_
+
+        if record_type == "PAPER":
+            # For papers: show grounded/partial OR schema-valid with real name
+            quality_filter = or_(
+                EntityRecord.verification_status.in_(["grounded", "partial"]),
+                and_(
+                    EntityRecord.schema_valid == True,  # noqa: E712
+                    EntityRecord.entity_name != "None",
+                    EntityRecord.entity_name != "",
+                ),
+            )
+        else:
+            # Strict filter for other types
+            quality_filter = and_(
+                EntityRecord.verification_status.in_(["grounded", "partial"]),
+                EntityRecord.schema_valid == True,  # noqa: E712
+            )
+
         result = await self._session.execute(
             select(EntityRecord)
             .where(
                 EntityRecord.record_type == record_type,
-                EntityRecord.verification_status.in_(["grounded", "partial"]),
-                EntityRecord.schema_valid == True,  # noqa: E712
-                # Note: no exported_at filter — sheet is cleared before each write,
-                # so all qualifying records should always be included.
+                quality_filter,
             )
             .order_by(EntityRecord.created_at)
             .limit(batch_size)
             .offset(offset)
         )
         return result.scalars().all()
+
 
 
     async def mark_exported(self, canonical_ids: list[str]) -> None:

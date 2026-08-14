@@ -1,230 +1,188 @@
 ﻿<div align="center">
-
-<!-- Full-width Banner -->
 <img src="assets/banner.png" width="100%" alt="ProvenMesh — Autonomous AI Ecosystem Intelligence"/>
-
-<br/><br/>
-
-<!-- Badge Row 1 -->
-<img src="https://img.shields.io/badge/Python-3.13-%230ea5e9?style=for-the-badge&logo=python&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/asyncio-Async_Native-%238b5cf6?style=for-the-badge&logo=python&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/PostgreSQL-16+pgvector-%2322c55e?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Redis-Streams-%23ef4444?style=for-the-badge&logo=redis&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Docker-Compose-%230ea5e9?style=for-the-badge&logo=docker&logoColor=white&labelColor=0D1117"/>
-
-<!-- Badge Row 2 -->
-<img src="https://img.shields.io/badge/Gemini-2.5_Flash-%230ea5e9?style=for-the-badge&logo=google&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Groq-Llama_3.3_70B-%23f97316?style=for-the-badge&logo=meta&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/OpenRouter-Nemotron_120B-%238b5cf6?style=for-the-badge&logoColor=white&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Google_Sheets-API_v4-%2322c55e?style=for-the-badge&logo=googlesheets&logoColor=white&labelColor=0D1117"/>
-
-<!-- Stats Row -->
-<img src="https://img.shields.io/badge/Cost-%240%2FMonth-%2322c55e?style=for-the-badge&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Sources-24%2B_RSS_%C2%B7_HN_API-%23f97316?style=for-the-badge&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/URLs_per_Cycle-1%2C725%2B-%238b5cf6?style=for-the-badge&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Hallucinations-0%25-%2322c55e?style=for-the-badge&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/Uptime-24%2F7-%230ea5e9?style=for-the-badge&labelColor=0D1117"/>
-<img src="https://img.shields.io/badge/License-MIT-%238b5cf6?style=for-the-badge&labelColor=0D1117"/>
-
-<br/><br/>
-
-<!-- CTA Buttons -->
-[![Live Dashboard](https://img.shields.io/badge/📊_Live_Google_Sheet-Open_Now-22c55e?style=for-the-badge&labelColor=0D1117)](https://docs.google.com/spreadsheets/d/130p3Bo5gZRBHWt9tK8J8BqVP5YY2ckaoCWW1UeC7vEc)
-[![Quick Start](https://img.shields.io/badge/🚀_Quick_Start-5_Minutes-0ea5e9?style=for-the-badge&labelColor=0D1117)](#-quick-start)
-[![Pitch Deck](https://img.shields.io/badge/📄_Pitch_Deck-PDF-f97316?style=for-the-badge&labelColor=0D1117)](ProvenMesh_Architecture_and_Implementation_Plan.pdf)
-
 </div>
 
 ---
 
-## 💡 What is ProvenMesh?
+## What is ProvenMesh?
 
-> **ProvenMesh** is an autonomous, real-time intelligence pipeline that crawls **24+ live sources**, extracts structured entities using a **self-healing 4-provider LLM chain**, verifies every field with **source-text grounding**, deduplicates via **fuzzy + semantic matching**, and exports to a **live Google Sheets dashboard** — all for **$0/month**.
+ProvenMesh is an **always-on AI research assistant** that automatically monitors 24+ news sources, extracts information about AI startups, products, research papers, jobs, and news — then exports everything to a live Google Sheet, updated every 20 minutes.
 
----
-
-## 🔴 The Problem
-
-| Pain Point | Reality |
-|-----------|---------|
-| 📄 ArXiv papers per day | **500+** — impossible to read manually |
-| 🚀 New AI startups per month | **200+** — no single source of truth |
-| 💰 Crunchbase Pro cost | **$500/month** — manually curated, goes stale |
-| ⏱️ Analyst research time | **6–8 hrs/day** just reading newsletters |
-| 🤖 LLM hallucination rate | **Up to 30%** on factual claims |
-
-**ProvenMesh solves all of these. At once. For free.**
+Think of it as your personal Bloomberg Terminal for the AI world — **completely free**.
 
 ---
 
-## 🏗️ Architecture
+## Why does it exist?
 
-<img src="assets/architecture.png" width="100%" alt="ProvenMesh Pipeline Architecture"/>
+Every day in the AI industry:
+- **500+ research papers** get published on ArXiv
+- **Hundreds of startups** announce funding or launch products
+- **Thousands of job openings** appear across AI companies
 
----
-
-## 🛠️ Tech Stack
-
-<table>
-<tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
-<tr><td><b>Runtime</b></td><td>Python 3.13 + asyncio</td><td>50+ concurrent tasks, non-blocking I/O</td></tr>
-<tr><td><b>HTTP</b></td><td>aiohttp</td><td>Async crawling, session pooling</td></tr>
-<tr><td><b>LLM #1</b></td><td>Gemini 2.5 Flash</td><td>Primary · 12 RPM free · JSON mode</td></tr>
-<tr><td><b>LLM #2</b></td><td>Groq Llama 3.3 70B</td><td>Fallback · 14,400 req/day free</td></tr>
-<tr><td><b>LLM #3</b></td><td>Nemotron 120B via OpenRouter</td><td>Tertiary · unlimited free</td></tr>
-<tr><td><b>LLM #4</b></td><td>Gemma 4 31B via OpenRouter</td><td>Backup · unlimited free</td></tr>
-<tr><td><b>Queue</b></td><td>Redis Streams</td><td>Reliable async message passing</td></tr>
-<tr><td><b>Database</b></td><td>PostgreSQL 16 + pgvector</td><td>Entity graph + vector embeddings</td></tr>
-<tr><td><b>Object Store</b></td><td>MinIO (S3-compatible)</td><td>Raw HTML archival + audit trail</td></tr>
-<tr><td><b>Entity Match</b></td><td>RapidFuzz + sentence-transformers</td><td>Fuzzy + semantic deduplication</td></tr>
-<tr><td><b>Logs</b></td><td>structlog (JSON)</td><td>Machine-readable observability</td></tr>
-<tr><td><b>Metrics</b></td><td>Prometheus</td><td>LLM cost, latency, token tracking</td></tr>
-<tr><td><b>Export</b></td><td>Google Sheets API v4</td><td>Live auto-updating dashboard</td></tr>
-<tr><td><b>Infra</b></td><td>Docker Compose</td><td>One-command full stack</td></tr>
-</table>
+No single person can read all of that. ProvenMesh reads it all for you and puts it in one organized spreadsheet.
 
 ---
 
-## 🔑 Key Innovations
-
-### 🛡️ Evidence-First Extraction — 0% Hallucinations
-
-```json
-{
-  "entityName": {
-    "value": "Anthropic",
-    "evidence": "Anthropic, the AI safety company, announced...",
-    "confidence": 0.97
-  }
-}
-```
-> **No evidence → value is `null`. The model cannot fabricate data.**
-
-### ⚡ 1,725 URLs per Cycle — 24 Sources in Parallel
-
-```python
-results = await asyncio.gather(*[fetch_rss(session, url, name) for url, name in _RSS_FEEDS])
-hn_urls = await backfill_hacker_news(session, days_back=30)  # 700+ historical stories
-```
-
-### 🔄 Self-Healing — Circuit Breaker Chain
-```
-Gemini 2.5 Flash → Groq 70B → Nemotron 120B → Gemma 4 31B
-  ↑ Opens at 20 failures · Recovers in 30 seconds · Zero manual intervention ↑
-```
-
-### 🔗 Semantic Entity Resolution
-```
-"OpenAI" + "Open AI" + "openai.com"  →  canonical: startup_openai (0.97 confidence)
-Algorithm: Normalize → RapidFuzz ≥85% → cosine similarity ≥0.88 → Upsert
-```
-
----
-
-## 📊 Live Dashboard
+## Live Dashboard
 
 **[📊 Open Google Sheet →](https://docs.google.com/spreadsheets/d/130p3Bo5gZRBHWt9tK8J8BqVP5YY2ckaoCWW1UeC7vEc)**
 
-| Tab | Color | Records | Key Columns |
-|-----|-------|---------|-------------|
-| 🚀 **Startups** | Cyan | 15+ | Name · Funding · Founders · HQ · Industry |
-| 🛠️ **Products** | Orange | 41+ | Description · Pricing · Features · GitHub |
-| 📄 **Papers** | Purple | Growing | Abstract · Authors · ArXiv ID · Citations |
-| 💼 **Jobs** | Green | Growing | Company · Salary · Skills · Remote Policy |
-| 📰 **News** | Red | 5+ | Headline · Summary · Source URL · Topics |
-| 🔗 **Entity Log** | Grey | 21+ | Full resolution audit trail |
+| Tab | What it tracks |
+|-----|---------------|
+| 🚀 Startups | AI companies — name, funding, founders, location, investors |
+| 🛠️ Products | AI tools — pricing, features, GitHub links |
+| 📄 Papers | Research papers — abstract, authors, ArXiv ID |
+| 💼 Jobs | AI job openings — salary, skills, remote policy |
+| 📰 News | AI news articles — headline, summary, source link |
+| 🔗 Entity Log | How the system matched & deduplicated entities |
+
+*Auto-refreshes every 20 minutes while the pipeline is running.*
 
 ---
 
-## 🚀 Quick Start
+## How it works
+
+<img src="assets/architecture.png" width="100%" alt="ProvenMesh Pipeline Architecture"/>
+
+In plain English:
+1. **Crawl** — fetches articles from 24 sources simultaneously (ArXiv, TechCrunch, HuggingFace blog, OpenAI/Anthropic/DeepMind blogs, Hacker News, Wired, MIT Tech Review and more)
+2. **Extract** — an AI model reads each article and pulls out structured data (name, funding amount, description, etc.)
+3. **Verify** — every extracted fact must be backed by a direct quote from the source. No quotes = rejected.
+4. **Resolve** — if "OpenAI" and "openai.com" appear in different articles, they get merged into one record
+5. **Export** — writes everything to the Google Sheet every 20 minutes
+
+---
+
+## Zero hallucinations guarantee
+
+Every field the AI extracts must include the exact sentence from the source article that proves it:
+
+```json
+{
+  "fundingTotal": {
+    "value": "$7.3B",
+    "evidence": "...raised $7.3 billion in total funding as of 2024..."
+  }
+}
+```
+
+If no evidence is found → the field is left blank. **The AI cannot make things up.**
+
+---
+
+## What makes it special
+
+| Feature | ProvenMesh | Manual research | Crunchbase Pro |
+|---------|:----------:|:---------------:|:--------------:|
+| Cost | **Free** | Free (but slow) | $500/month |
+| Updated | **Every 20 min** | Whenever you do it | Days/weeks |
+| Hallucinations | **0% (grounded)** | Human errors | Human errors |
+| Sources | **24+ live feeds** | Whatever you find | Curated DB |
+| Historical data | **30 days backfill** | You'd have to do it | Limited |
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Language | Python 3.13 with async/await |
+| AI Models | Gemini 2.5 Flash → Groq Llama 70B → Nemotron 120B → Gemma 31B (free fallback chain) |
+| Queue | Redis Streams |
+| Database | PostgreSQL 16 with vector search |
+| Storage | MinIO (S3-compatible) for raw HTML archive |
+| Entity matching | RapidFuzz + sentence embeddings |
+| Export | Google Sheets API v4 |
+| Infrastructure | Docker Compose |
+
+---
+
+## Quick Start
+
+### Requirements
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — runs the database
+- Python 3.11 or newer
+- Free API keys (takes 5 minutes, see below)
+
+### Setup
 
 ```bash
 git clone https://github.com/Surajsharma0804/provenmesh.git
 cd provenmesh
-cp .env.example .env        # Add your API keys
-docker compose up -d        # Postgres + Redis + MinIO
+cp .env.example .env
+# Edit .env and add your API keys
+docker compose up -d
 pip install -e ".[dev]"
 alembic upgrade head
 python scripts/seed_entities.py
+```
+
+### Run
+
+**Windows:** double-click `start.bat`
+
+**Mac/Linux:**
+```bash
 python -m provenmesh.main run --crawl-workers 3 --extract-workers 2 --resolve-workers 2 --auto-export --export-interval 20
 ```
 
-**Windows — just double-click `start.bat`** ✅
+### Force export to sheet anytime
+```bash
+python -m provenmesh.main export
+```
 
 ---
 
-## 🔐 Free API Keys
+## Free API Keys (5 minutes)
 
-| Provider | Model | Limit | Get Key |
-|---------|-------|-------|---------|
-| **Google AI Studio** | Gemini 2.5 Flash | 15 RPM | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| **Groq** | Llama 3.3 70B | 14,400/day | [console.groq.com/keys](https://console.groq.com/keys) |
-| **OpenRouter** | Nemotron 120B + Gemma 31B | Unlimited | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Service | Model used | Free limit | Link |
+|---------|-----------|-----------|------|
+| Google AI Studio | Gemini 2.5 Flash | 15 requests/min | [Get key →](https://aistudio.google.com/app/apikey) |
+| Groq | Llama 3.3 70B | 14,400 requests/day | [Get key →](https://console.groq.com/keys) |
+| OpenRouter | Nemotron 120B + Gemma 31B | Unlimited free | [Get key →](https://openrouter.ai/keys) |
 
 ---
 
-## 🖥️ After PC Reboot
+## After turning your PC back on
 
 ```bash
-docker compose up -d
-python -m provenmesh.main run --auto-export --export-interval 20
-# Or just double-click start.bat
+# 1. Start Docker Desktop (if not auto-started)
+# 2. Double-click start.bat
 ```
-> All data is **preserved** in PostgreSQL Docker volumes across reboots.
+
+Your data is safe — PostgreSQL stores everything in Docker volumes that persist across restarts.
 
 ---
 
-## 📈 Benchmarks
-
-| Metric | Value |
-|--------|-------|
-| News sources | 24 RSS feeds + Hacker News API |
-| URLs per cycle | **1,725+** |
-| Historical backfill | **30 days** (HN Algolia API) |
-| Data freshness | Every **20 minutes** |
-| Monthly cost | **$0.00** |
-| Self-healing recovery | **30 seconds** |
-
----
-
-## 🆚 ProvenMesh vs Alternatives
-
-| Feature | **ProvenMesh** | Crunchbase Pro | Manual |
-|---------|:-----------:|:-----------:|:------:|
-| **Cost** | **$0** ✅ | $500/mo ❌ | Time ❌ |
-| **Update Freq.** | **20 min** ✅ | Days ❌ | Manual ❌ |
-| **Hallucinations** | **Grounded** ✅ | Human ⚠️ | Human ⚠️ |
-| **Sources** | **24+** ✅ | Curated ❌ | Limited ❌ |
-| **Historical** | **30 days** ✅ | N/A ❌ | No ❌ |
-| **Self-Healing** | **Yes** ✅ | N/A | N/A |
-
----
-
-## 📁 Structure
+## Project structure
 
 ```
 provenmesh/
 ├── src/provenmesh/
-│   ├── crawling/producers/    # news · startups · products · papers · jobs
-│   ├── extraction/providers/  # gemini · groq · openrouter
-│   ├── extraction/orchestrator.py  # Fallback chain + circuit breakers
-│   ├── resolution/            # Fuzzy + semantic deduplication
-│   ├── export/sheets.py       # Google Sheets — 6 colored tabs
-│   └── graph/                 # PostgreSQL entity repository
-├── assets/                    # banner.png · architecture.png · logo.png
-├── start.bat                  # Windows one-click launcher
-├── docker-compose.yml
-└── .env.example
+│   ├── crawler/         # Fetches URLs from all 24 sources
+│   ├── extraction/      # AI extraction with 4-provider fallback
+│   ├── grounding/       # Evidence verification (anti-hallucination)
+│   ├── resolver/        # Entity deduplication
+│   ├── export/          # Google Sheets export
+│   └── graph/           # Database layer (PostgreSQL)
+├── assets/              # Logo and architecture diagrams
+├── start.bat            # Windows one-click launcher
+├── docker-compose.yml   # Database infrastructure
+└── .env.example         # Configuration template
 ```
 
 ---
 
+## License
+
+MIT — free to use, fork, and build on.
+
+---
+
 <div align="center">
-
-<img src="assets/logo.png" width="80" alt="ProvenMesh"/>
-
-**Built with Python 3.13 · Runs for Free · Zero Hallucinations**
-
-*⭐ Star this repo if ProvenMesh impressed you!*
-
+<img src="assets/logo.png" width="70" alt="ProvenMesh"/>
+<br/>
+<em>Built with Python 3.13 · Powered by free AI APIs · $0/month</em>
+<br/><br/>
+If this project was useful to you, please ⭐ star it on GitHub!
 </div>

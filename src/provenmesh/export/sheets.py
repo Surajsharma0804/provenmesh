@@ -271,9 +271,9 @@ class SheetsExporter:
                                     "endColumnIndex": num_cols,
                                 },
                                 "rowProperties": {
-                                    "headerColor": header_color,
+                                    # Subtle: white / very light grey — NOT the bright tab color
                                     "firstBandColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-                                    "secondBandColor": {"red": 0.953, "green": 0.965, "blue": 0.980},
+                                    "secondBandColor": {"red": 0.969, "green": 0.973, "blue": 0.980},
                                 },
                             }
                         }
@@ -285,6 +285,7 @@ class SheetsExporter:
                         ).execute()
                     except Exception:
                         pass  # Already banded — silently skip
+
 
             except Exception as e:
                 logger.warning("sheet_header_failed", tab=tab_name, error=str(e))
