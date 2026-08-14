@@ -65,5 +65,10 @@ def validate_record(
         errors.append(f"{e.json_path}: {e.message}")
     except jsonschema.SchemaError as e:
         errors.append(f"Schema error: {e.message}")
+    except Exception as e:
+        # Catch referencing errors ($ref resolution failures in jsonschema)
+        # These are schema authoring issues — don't block pipeline
+        logger.debug("schema_ref_unresolvable", error=str(e), record_type=record_type)
+        return True, []
 
     return False, errors

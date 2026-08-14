@@ -76,11 +76,11 @@ class ExtractionWorker:
 
         if extraction_result.get("error"):
             logger.warning(
-                "extraction_error",
+                "extraction_empty",
                 url=msg.url,
                 error=extraction_result["error"],
             )
-            raise RuntimeError(f"Extraction failed: {extraction_result['error']}")
+            return  # Skip — don't retry, don't crash
 
         fields = extraction_result.get("fields", {})
         relationships = extraction_result.get("relationships", [])

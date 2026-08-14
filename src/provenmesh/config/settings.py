@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # ─── LLM Providers ──────────────────────────────────────────
     gemini_api_key: SecretStr = SecretStr("")
     groq_api_key: SecretStr = SecretStr("")
+    openrouter_api_key: SecretStr = SecretStr("")
     deepseek_api_key: SecretStr = SecretStr("")
 
     # ─── GitHub ──────────────────────────────────────────────────

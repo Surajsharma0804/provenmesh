@@ -157,7 +157,15 @@ def export() -> None:
 @click.option("--crawl-workers", default=2)
 @click.option("--extract-workers", default=2)
 @click.option("--resolve-workers", default=2)
-def run(crawl_workers: int, extract_workers: int, resolve_workers: int) -> None:
+@click.option("--auto-export", is_flag=True, default=False, help="Auto-export to Google Sheets periodically.")
+@click.option("--export-interval", default=30, help="Auto-export interval in minutes (default: 30).")
+def run(
+    crawl_workers: int,
+    extract_workers: int,
+    resolve_workers: int,
+    auto_export: bool,
+    export_interval: int,
+) -> None:
     """Run the full pipeline (producers + all worker types)."""
     from provenmesh.crawler.producers.jobs import JobsProducer
     from provenmesh.crawler.producers.news import NewsProducer
@@ -167,6 +175,22 @@ def run(crawl_workers: int, extract_workers: int, resolve_workers: int) -> None:
     from provenmesh.workers.crawl_worker import CrawlWorker
     from provenmesh.workers.extraction_worker import ExtractionWorker
     from provenmesh.workers.resolution_worker import ResolutionWorker
+
+    async def auto_export_loop(shutdown: asyncio.Event, interval_minutes: int) -> None:
+        """Periodically export to Google Sheets while the pipeline is running."""
+        interval_secs = interval_minutes * 60
+        logger.info("auto_export_started", interval_minutes=interval_minutes)
+        while not shutdown.is_set():
+            try:
+                await asyncio.sleep(interval_secs)
+                if shutdown.is_set():
+                    break
+                from provenmesh.export.sheets import SheetsExporter
+                exporter = SheetsExporter()
+                results = await exporter.export_all()
+                logger.info("auto_export_done", results=results)
+            except Exception as e:
+                logger.warning("auto_export_error", error=str(e))
 
     async def run_all() -> None:
         shutdown = asyncio.Event()
@@ -194,6 +218,15 @@ def run(crawl_workers: int, extract_workers: int, resolve_workers: int) -> None:
         for i in range(resolve_workers):
             worker = ResolutionWorker(worker_id=f"resolver-{i}")
             tasks.append(worker.run(shutdown))
+
+        # Auto-export loop
+        if auto_export:
+            tasks.append(auto_export_loop(shutdown, export_interval))
+            logger.info(
+                "auto_export_enabled",
+                interval_minutes=export_interval,
+                message=f"Sheet will auto-update every {export_interval} min",
+            )
 
         await asyncio.gather(*tasks, return_exceptions=True)
 

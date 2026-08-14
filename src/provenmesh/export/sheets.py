@@ -50,6 +50,44 @@ class SheetsExporter:
             "NEWS_SIGNAL": "News",
         }
 
+        TAB_HEADERS = {
+            "Startups": [
+                "Canonical ID", "Company Name", "Type", "Status", "Source URL",
+                "Description", "Founded Date", "Founders", "HQ",
+                "Industry", "Funding Total", "Last Funding Round",
+                "Employees", "Website", "Investors", "Products", "Tech Stack",
+            ],
+            "Products": [
+                "Canonical ID", "Product Name", "Type", "Status", "Source URL",
+                "Description", "Company", "Category", "Launch Date", "Pricing",
+                "Pricing Model", "Features", "Platforms", "Website", "GitHub URL",
+            ],
+            "Papers": [
+                "Canonical ID", "Paper Name", "Type", "Status", "Source URL",
+                "Title", "Abstract", "Authors", "Published Date", "ArXiv ID",
+                "Categories", "GitHub URL", "GitHub Stars", "Citations", "Affiliations",
+            ],
+            "Jobs": [
+                "Canonical ID", "Job Title", "Type", "Status", "Source URL",
+                "Title", "Company", "Location", "Remote Policy", "Employment Type",
+                "Salary Min", "Salary Max", "Skills", "Posted Date",
+            ],
+            "News": [
+                "Canonical ID", "Headline", "Type", "Status", "Source URL",
+                "Title", "Summary", "Published Date", "Author", "Publisher",
+                "Mentioned Entities", "Key Topics",
+            ],
+            "Entity Mapping Log": [
+                "Canonical ID", "Entity Name", "Type", "Resolution Method",
+                "Resolution Confidence", "Source Count", "Is Seed",
+                "Verification Status", "Grounding Ratio", "Source URL",
+            ],
+        }
+
+        # Setup: create all tabs and write headers (clears old data first)
+        all_tabs = list(type_tab_map.values()) + ["Entity Mapping Log"]
+        await self._setup_tabs(all_tabs, TAB_HEADERS)
+
         for record_type, tab_name in type_tab_map.items():
             try:
                 count = await self._export_type(record_type, tab_name)
@@ -69,6 +107,72 @@ class SheetsExporter:
 
         logger.info("export_completed", results=results, run_id=self._run_id)
         return results
+
+    async def _setup_tabs(
+        self,
+        tab_names: list[str],
+        headers: dict[str, list[str]],
+    ) -> None:
+        """Create all tabs if missing and write their header rows."""
+        from pathlib import Path
+        from google.oauth2.service_account import Credentials
+        from googleapiclient.discovery import build
+        from provenmesh.config.settings import PROJECT_ROOT, get_settings
+
+        settings = get_settings()
+        if not settings.google_sheets_spreadsheet_id:
+            return
+
+        creds_path = settings.google_sheets_credentials_json
+        resolved = Path(creds_path)
+        if not resolved.is_absolute():
+            resolved = PROJECT_ROOT / resolved
+
+        creds = Credentials.from_service_account_file(
+            str(resolved),
+            scopes=["https://www.googleapis.com/auth/spreadsheets"],
+        )
+        service = build("sheets", "v4", credentials=creds)
+        spreadsheet_id = settings.google_sheets_spreadsheet_id
+
+        # Get existing sheet titles
+        sheet_meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        existing = {s["properties"]["title"] for s in sheet_meta.get("sheets", [])}
+
+        # Create missing tabs in one batchUpdate
+        requests = []
+        for tab_name in tab_names:
+            if tab_name not in existing:
+                requests.append({"addSheet": {"properties": {"title": tab_name}}})
+
+        if requests:
+            service.spreadsheets().batchUpdate(
+                spreadsheetId=spreadsheet_id,
+                body={"requests": requests},
+            ).execute()
+            logger.info("sheet_tabs_created", count=len(requests))
+
+        # Clear existing data and write headers to each tab
+        for tab_name in tab_names:
+            tab_headers = headers.get(tab_name, [])
+            if not tab_headers:
+                continue
+            try:
+                # Clear the tab first (avoids duplicate rows on re-run)
+                service.spreadsheets().values().clear(
+                    spreadsheetId=spreadsheet_id,
+                    range=f"{tab_name}!A:Z",
+                ).execute()
+                # Write header row
+                service.spreadsheets().values().update(
+                    spreadsheetId=spreadsheet_id,
+                    range=f"{tab_name}!A1",
+                    valueInputOption="RAW",
+                    body={"values": [tab_headers]},
+                ).execute()
+                logger.info("sheet_header_written", tab=tab_name)
+            except Exception as e:
+                logger.warning("sheet_header_failed", tab=tab_name, error=str(e))
 
     async def _export_type(self, record_type: str, tab_name: str) -> int:
         """Export all exportable records of a given type."""
@@ -182,12 +286,12 @@ class SheetsExporter:
                     e.entity_name,
                     e.record_type,
                     e.resolution_method,
-                    str(round(e.resolution_confidence, 3)),
-                    str(e.source_count),
+                    str(round(e.resolution_confidence or 0.0, 3)),
+                    str(e.source_count or 0),
                     "Yes" if e.is_seed else "No",
-                    e.verification_status,
-                    str(round(e.grounding_ratio, 2)),
-                    e.source_url,
+                    e.verification_status or "",
+                    str(round(e.grounding_ratio or 0.0, 2)),
+                    e.source_url or "",
                 ])
 
             if rows:
@@ -208,19 +312,54 @@ class SheetsExporter:
             return
 
         try:
+            from pathlib import Path
+
             from google.oauth2.service_account import Credentials
             from googleapiclient.discovery import build
+            from provenmesh.config.settings import PROJECT_ROOT
+
+            creds_path = settings.google_sheets_credentials_json
+            # Resolve relative paths against the project root
+            resolved = Path(creds_path)
+            if not resolved.is_absolute():
+                resolved = PROJECT_ROOT / resolved
 
             creds = Credentials.from_service_account_file(
-                settings.google_sheets_credentials_json,
+                str(resolved),
                 scopes=["https://www.googleapis.com/auth/spreadsheets"],
             )
             service = build("sheets", "v4", credentials=creds)
+            spreadsheet_id = settings.google_sheets_spreadsheet_id
 
-            body = {"values": rows}
+            # Ensure the tab exists — create it if not
+            try:
+                sheet_meta = service.spreadsheets().get(
+                    spreadsheetId=spreadsheet_id
+                ).execute()
+                existing_titles = {
+                    s["properties"]["title"]
+                    for s in sheet_meta.get("sheets", [])
+                }
+                if tab_name not in existing_titles:
+                    body_add = {
+                        "requests": [{
+                            "addSheet": {
+                                "properties": {"title": tab_name}
+                            }
+                        }]
+                    }
+                    service.spreadsheets().batchUpdate(
+                        spreadsheetId=spreadsheet_id,
+                        body=body_add,
+                    ).execute()
+                    logger.info("sheet_tab_created", tab=tab_name)
+            except Exception as tab_err:
+                logger.warning("sheet_tab_check_failed", tab=tab_name, error=str(tab_err))
+
+            body = {"values": [[str(c) for c in row] for row in rows]}
             service.spreadsheets().values().append(
-                spreadsheetId=settings.google_sheets_spreadsheet_id,
-                range=f"'{tab_name}'!A1",
+                spreadsheetId=spreadsheet_id,
+                range=f"{tab_name}!A1",
                 valueInputOption="RAW",
                 insertDataOption="INSERT_ROWS",
                 body=body,

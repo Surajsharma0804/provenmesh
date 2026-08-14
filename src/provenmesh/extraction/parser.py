@@ -1,4 +1,4 @@
-"""LLM response parser — safe JSON parsing with validation."""
+"""LLM response parser -- safe JSON parsing with validation."""
 
 from __future__ import annotations
 
@@ -14,8 +14,9 @@ def parse_llm_response(raw_response: str) -> dict[str, Any]:
     """Safely parse LLM JSON response.
 
     Handles common LLM output issues:
-    - Markdown code blocks (```json ... ```)
-    - Extra whitespace
+    - Markdown code blocks
+    - Extra whitespace / leading newlines
+    - Non-dict top-level values (string, list) from google.genai SDK
     - Truncated responses
     """
     if not raw_response:
@@ -33,21 +34,42 @@ def parse_llm_response(raw_response: str) -> dict[str, Any]:
 
     text = text.strip()
 
+    # Try direct JSON parse
     try:
-        return json.loads(text)
+        result = json.loads(text)
+        if isinstance(result, dict):
+            return result
+        if isinstance(result, list):
+            return {"items": result}
+        # Plain string/number returned by model -- not useful
+        logger.warning("llm_response_not_dict", type=type(result).__name__, preview=str(result)[:100])
+        return {}
     except json.JSONDecodeError as e:
         logger.warning("llm_response_parse_failed", error=str(e), response_preview=text[:200])
 
-        # Try to extract JSON from the response
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            try:
-                return json.loads(text[start:end])
-            except json.JSONDecodeError:
-                pass
+    # Try to find a JSON object anywhere in the text
+    start = text.find("{")
+    end = text.rfind("}") + 1
+    if start >= 0 and end > start:
+        try:
+            result = json.loads(text[start:end])
+            if isinstance(result, dict):
+                return result
+        except json.JSONDecodeError:
+            pass
 
-        return {}
+    # Try to find a JSON array
+    start = text.find("[")
+    end = text.rfind("]") + 1
+    if start >= 0 and end > start:
+        try:
+            result = json.loads(text[start:end])
+            if isinstance(result, list):
+                return {"items": result}
+        except json.JSONDecodeError:
+            pass
+
+    return {}
 
 
 def extract_evidenced_fields(
@@ -59,6 +81,10 @@ def extract_evidenced_fields(
     even if the LLM returned a simpler format.
     """
     result: dict[str, dict[str, Any]] = {}
+
+    # Guard: only process actual dicts
+    if not isinstance(parsed, dict):
+        return result
 
     for key, value in parsed.items():
         if key == "relationships":
@@ -97,6 +123,9 @@ def extract_evidenced_fields(
 
 def extract_relationships(parsed: dict[str, Any]) -> list[dict[str, Any]]:
     """Extract relationship candidates from LLM response."""
+    if not isinstance(parsed, dict):
+        return []
+
     relationships = parsed.get("relationships", [])
     if not isinstance(relationships, list):
         return []

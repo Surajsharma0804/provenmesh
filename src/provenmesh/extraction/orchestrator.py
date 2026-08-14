@@ -31,6 +31,7 @@ from provenmesh.extraction.providers.base import (
 from provenmesh.extraction.providers.deepseek import DeepSeekProvider
 from provenmesh.extraction.providers.gemini import GeminiProvider
 from provenmesh.extraction.providers.groq import GroqProvider
+from provenmesh.extraction.providers.openrouter import OpenRouterProvider
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import (
     CIRCUIT_BREAKER_OPEN_TOTAL,
@@ -42,6 +43,33 @@ from provenmesh.observability.metrics import (
 )
 
 logger = get_logger(__name__)
+
+# Global rate limiter: max 12 Gemini requests per 60s (free tier = 15 RPM)
+# Uses a semaphore + timestamp tracking to enforce a sliding window.
+_GEMINI_MAX_RPM = 12
+_GEMINI_WINDOW_SECS = 60.0
+_gemini_request_times: list[float] = []
+_gemini_rate_lock = asyncio.Lock()
+
+
+async def _acquire_gemini_slot() -> None:
+    """Block until a Gemini request slot is available (12 RPM limit)."""
+    async with _gemini_rate_lock:
+        now = time.monotonic()
+        # Remove timestamps older than the window
+        cutoff = now - _GEMINI_WINDOW_SECS
+        while _gemini_request_times and _gemini_request_times[0] < cutoff:
+            _gemini_request_times.pop(0)
+
+        if len(_gemini_request_times) >= _GEMINI_MAX_RPM:
+            # Must wait until the oldest slot expires
+            oldest = _gemini_request_times[0]
+            wait_secs = (_GEMINI_WINDOW_SECS - (now - oldest)) + 0.5
+            if wait_secs > 0:
+                logger.info("gemini_rate_throttle", wait_secs=round(wait_secs, 1))
+                await asyncio.sleep(wait_secs)
+
+        _gemini_request_times.append(time.monotonic())
 
 
 class CircuitBreaker:
@@ -105,14 +133,19 @@ class ExtractionOrchestrator:  # pragma: no cover
         self._settings = get_settings()
         self._cost_guard = CostGuard()
         self._providers: list[BaseLLMProvider] = [
-            GeminiProvider(),
-            GroqProvider(),
-            DeepSeekProvider(),
+            GeminiProvider(),                    # Priority 1 - Gemini 2.5 Flash (fastest)
+            GroqProvider(),                      # Priority 2 - Llama 3.3 70B (14,400/day free)
+            OpenRouterProvider(                  # Priority 3 - Nemotron 120B free
+                model="nvidia/nemotron-3-super-120b-a12b:free"
+            ),
+            OpenRouterProvider(                  # Priority 4 - Gemma 4 31B free backup
+                model="google/gemma-4-31b-it:free"
+            ),
         ]
         self._circuit_breakers: dict[str, CircuitBreaker] = {
             p.provider_name: CircuitBreaker(
                 failure_threshold=self._settings.circuit_breaker_failure_threshold,
-                recovery_timeout=self._settings.circuit_breaker_recovery_timeout_seconds,
+                recovery_timeout=30.0,  # 30s recovery so it resets quickly after rate limit clears
             )
             for p in self._providers
         }
@@ -164,7 +197,7 @@ class ExtractionOrchestrator:  # pragma: no cover
 
         try:
             for chunk in chunks:
-                user_prompt = prompt_template.format(content=chunk.text)
+                user_prompt = prompt_template.replace("{content}", chunk.text)
                 response = await self._call_with_fallback(user_prompt, record_type)
 
                 if response:
@@ -233,6 +266,10 @@ class ExtractionOrchestrator:  # pragma: no cover
             try:
                 LLM_REQUESTS_TOTAL.labels(provider=provider.provider_name).inc()
                 start = time.monotonic()
+
+                # Throttle Gemini to stay under free tier (12 RPM)
+                if provider.provider_name == "gemini":
+                    await _acquire_gemini_slot()
 
                 response = await provider.generate(
                     system_prompt=SYSTEM_PROMPT,

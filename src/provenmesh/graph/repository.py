@@ -87,20 +87,22 @@ class EntityRepository:
         batch_size: int = 500,
         offset: int = 0,
     ) -> Sequence[EntityRecord]:
-        """Get entities ready for export (grounded + schema-valid + resolved)."""
+        """Get entities ready for export (grounded or partial + schema-valid)."""
         result = await self._session.execute(
             select(EntityRecord)
             .where(
                 EntityRecord.record_type == record_type,
                 EntityRecord.verification_status.in_(["grounded", "partial"]),
                 EntityRecord.schema_valid == True,  # noqa: E712
-                EntityRecord.exported_at == None,  # noqa: E711
+                # Note: no exported_at filter — sheet is cleared before each write,
+                # so all qualifying records should always be included.
             )
             .order_by(EntityRecord.created_at)
             .limit(batch_size)
             .offset(offset)
         )
         return result.scalars().all()
+
 
     async def mark_exported(self, canonical_ids: list[str]) -> None:
         """Mark entities as exported."""

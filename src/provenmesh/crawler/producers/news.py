@@ -1,19 +1,36 @@
-"""News vertical producer — discovers AI news with freshness filtering."""
+"""News vertical producer -- discovers AI news articles."""
 
 from __future__ import annotations
 
-from provenmesh.crawler.fetcher import TieredFetcher
+import asyncio
+import xml.etree.ElementTree as ET
+
+import aiohttp
+
 from provenmesh.crawler.producers.base import BaseProducer
 from provenmesh.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
+_API_HEADERS = {
+    "User-Agent": "ProvenMesh/1.0 RSS Reader",
+    "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+}
+
+# Reliable RSS feeds -- no robots.txt issues, no brotli issues
+_RSS_FEEDS = [
+    ("https://techcrunch.com/category/artificial-intelligence/feed/", "techcrunch_ai"),
+    ("https://feeds.feedburner.com/venturebeat/SZYF", "venturebeat_ai"),
+    ("https://www.theverge.com/rss/index.xml", "theverge_ai"),
+    ("https://rss.arxiv.org/rss/cs.AI", "arxiv_news"),
+    ("https://aiweekly.co/issues.rss", "aiweekly"),
+]
+
 
 class NewsProducer(BaseProducer):
-    """Discovers AI news articles from tech publications.
+    """Discovers AI news articles via RSS feeds.
 
-    News is treated as a signal, not a first-class entity (v2 §2).
-    Freshness filtering ensures only recent articles are ingested.
+    Uses RSS feeds directly -- no robots.txt issues, no brotli compression.
     """
 
     @property
@@ -25,54 +42,65 @@ class NewsProducer(BaseProducer):
         return "NEWS_SIGNAL"
 
     async def discover_urls(self) -> None:
-        fetcher = TieredFetcher()
-        checkpoint = await self._load_checkpoint("news")
-        start_page = checkpoint.get("page", 0) + 1
+        discovered = 0
+        timeout = aiohttp.ClientTimeout(total=20)
 
-        # VentureBeat AI
-        for page in range(start_page, 31):
-            listing_url = f"https://venturebeat.com/category/ai/page/{page}/"
-            result = await fetcher.fetch(
-                listing_url,
-                source_name="venturebeat_ai",
-                record_type=self.record_type,
-                max_tier=1,
-            )
-            if not result.ok:
-                break
+        async with aiohttp.ClientSession(timeout=timeout, headers=_API_HEADERS) as session:
+            for feed_url, source_name in _RSS_FEEDS:
+                try:
+                    async with session.get(feed_url) as response:
+                        if response.status == 200:
+                            xml_text = await response.text()
+                            urls = self._parse_rss_feed(xml_text, feed_url)
+                            for url in urls:
+                                await self._enqueue_url(url, source_name=source_name, listing_page=0, fetch_tier=1)
+                                discovered += 1
+                            logger.info("rss_feed_done", feed=feed_url, count=len(urls))
+                        else:
+                            logger.warning("rss_feed_failed", feed=feed_url, status=response.status)
+                except Exception as e:
+                    logger.warning("rss_feed_error", feed=feed_url, error=str(e))
+                await asyncio.sleep(1)
 
-            urls = self._extract_detail_urls(result.text, listing_url)
-            if not urls:
-                break
+        await self._save_checkpoint("news", 1, "done")
+        logger.info("news_producer_done", urls_discovered=discovered)
 
-            for url in urls:
-                await self._enqueue_url(
-                    url,
-                    source_name="venturebeat_ai",
-                    listing_page=page,
-                    fetch_tier=1,
-                )
-
-            await self._save_checkpoint("news", page, listing_url)
-
-    def _extract_detail_urls(self, html: str, base_url: str) -> list[str]:
-        """Extract news article URLs from listing HTML."""
-        from bs4 import BeautifulSoup
-
-        from provenmesh.crawler.normalization import normalize_url
-
-        soup = BeautifulSoup(html, "lxml")
+    def _parse_rss_feed(self, xml_text: str, feed_url: str) -> list[str]:
+        """Parse RSS/Atom feed and extract article URLs."""
         urls: list[str] = []
+        try:
+            root = ET.fromstring(xml_text)  # noqa: S314
 
-        # VentureBeat article links
-        for link in soup.select(
-            "a.article-title, a[class*='ArticleTitle'], "
-            "h2 a, h3 a, a[href*='/2026/'], a[href*='/2025/']"
-        ):
-            href = link.get("href", "")
-            if href and not href.startswith("#"):
-                full_url = normalize_url(str(href), base_url)
-                if full_url:
-                    urls.append(full_url)
+            # RSS 2.0
+            for item in root.findall(".//item"):
+                link = item.find("link")
+                if link is not None and link.text:
+                    urls.append(link.text.strip())
+                else:
+                    # Some RSS use <guid> as URL
+                    guid = item.find("guid")
+                    if guid is not None and guid.text and guid.text.startswith("http"):
+                        urls.append(guid.text.strip())
 
-        return urls
+            # Atom feeds
+            ns = {"atom": "http://www.w3.org/2005/Atom"}
+            for entry in root.findall("atom:entry", ns):
+                for link in entry.findall("atom:link", ns):
+                    href = link.get("href", "")
+                    rel = link.get("rel", "alternate")
+                    if href and rel == "alternate":
+                        urls.append(href)
+                        break
+
+        except ET.ParseError as e:
+            logger.error("rss_parse_error", feed=feed_url, error=str(e))
+
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        unique: list[str] = []
+        for url in urls:
+            if url not in seen and url.startswith("http"):
+                seen.add(url)
+                unique.append(url)
+
+        return unique[:200]

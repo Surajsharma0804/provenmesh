@@ -125,7 +125,8 @@ NEWS_PROMPT = """Extract news article information from the following web page co
 
 Return a JSON object with this structure:
 {
-  "title": {"value": "...", "evidence": "...", "confidence": 0.0},
+  "entityName": {"value": "article headline (max 80 chars)", "evidence": "...", "confidence": 0.0},
+  "title": {"value": "full article title", "evidence": "...", "confidence": 0.0},
   "summary": {"value": "2-3 sentence summary", "evidence": "...", "confidence": 0.0},
   "publishedDate": {"value": "YYYY-MM-DD or null", "evidence": "...", "confidence": 0.0},
   "author": {"value": "...", "evidence": "...", "confidence": 0.0},

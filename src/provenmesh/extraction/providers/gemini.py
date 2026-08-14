@@ -1,10 +1,11 @@
-"""Gemini Flash provider — cheapest, fastest (PDF §5.1 priority 1)."""
+"""Gemini Flash provider -- cheapest, fastest (PDF §5.1 priority 1)."""
 
 from __future__ import annotations
 
 import time
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 
 from provenmesh.config.settings import get_settings
 from provenmesh.extraction.providers.base import (
@@ -21,9 +22,9 @@ logger = get_logger(__name__)
 
 
 class GeminiProvider(BaseLLMProvider):
-    """Google Gemini Flash — first in the fallback chain."""
+    """Google Gemini Flash -- first in the fallback chain."""
 
-    def __init__(self, model: str = "gemini-2.0-flash") -> None:
+    def __init__(self, model: str = "gemini-2.5-flash") -> None:
         self._model_name = model
         self._configured = False
         self._cost_per_1k_input = 0.000075
@@ -37,14 +38,12 @@ class GeminiProvider(BaseLLMProvider):
     def model_name(self) -> str:
         return self._model_name
 
-    def _ensure_configured(self) -> None:
-        if not self._configured:
-            settings = get_settings()
-            api_key = safe_str(settings.gemini_api_key)
-            if not api_key:
-                raise LLMProviderError("GEMINI_API_KEY not configured", "gemini")
-            genai.configure(api_key=api_key)
-            self._configured = True
+    def _get_client(self) -> genai.Client:
+        settings = get_settings()
+        api_key = safe_str(settings.gemini_api_key)
+        if not api_key:
+            raise LLMProviderError("GEMINI_API_KEY not configured", "gemini")
+        return genai.Client(api_key=api_key)
 
     async def generate(
         self,
@@ -54,42 +53,71 @@ class GeminiProvider(BaseLLMProvider):
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> LLMResponse:
-        self._ensure_configured()
+        import asyncio
+        client = self._get_client()
         start = time.monotonic()
 
         try:
-            model = genai.GenerativeModel(
-                model_name=self._model_name,
-                system_instruction=system_prompt,
-                generation_config=genai.GenerationConfig(
-                    temperature=temperature,
-                    max_output_tokens=max_tokens,
-                    response_mime_type="application/json",
+            # Run the blocking SDK call in a thread to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.models.generate_content(
+                    model=self._model_name,
+                    contents=user_prompt,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=temperature,
+                        max_output_tokens=max_tokens,
+                        response_mime_type="application/json",
+                    ),
                 ),
             )
-
-            response = model.generate_content(user_prompt)
             elapsed = (time.monotonic() - start) * 1000
+
+            # Extract text safely
+            raw_text = ""
+            if response.candidates:
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    raw_text = "".join(
+                        p.text for p in candidate.content.parts if hasattr(p, "text") and p.text
+                    )
+            if not raw_text and hasattr(response, "text") and response.text:
+                raw_text = response.text
 
             # Extract token counts
             usage = response.usage_metadata
-            input_tokens = usage.prompt_token_count if usage else 0
-            output_tokens = usage.candidates_token_count if usage else 0
+            input_tokens = getattr(usage, "prompt_token_count", 0) or 0
+            output_tokens = getattr(usage, "candidates_token_count", 0) or 0
 
             cost = (
                 (input_tokens / 1000) * self._cost_per_1k_input
                 + (output_tokens / 1000) * self._cost_per_1k_output
             )
 
+            finish_reason = ""
+            if response.candidates:
+                finish_reason = str(response.candidates[0].finish_reason)
+
+            logger.debug(
+                "gemini_response",
+                model=self._model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                finish_reason=finish_reason,
+                preview=raw_text[:80],
+            )
+
             return LLMResponse(
-                content=response.text or "",
+                content=raw_text,
                 provider=self.provider_name,
                 model=self._model_name,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 latency_ms=elapsed,
                 cost_usd=cost,
-                finish_reason=str(response.candidates[0].finish_reason) if response.candidates else "",  # noqa: E501
+                finish_reason=finish_reason,
             )
 
         except Exception as e:

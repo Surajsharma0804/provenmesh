@@ -1,0 +1,10 @@
+﻿[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python -m provenmesh.main run --crawl-workers 2 --extract-workers 1 --resolve-workers 1 --auto-export --export-interval 20"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+healthcheckPath = "/health"
+healthcheckTimeout = 30
