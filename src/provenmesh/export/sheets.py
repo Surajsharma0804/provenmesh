@@ -113,7 +113,7 @@ class SheetsExporter:
         tab_names: list[str],
         headers: dict[str, list[str]],
     ) -> None:
-        """Create all tabs if missing and write their header rows."""
+        """Create all tabs if missing, write headers, and apply rich formatting."""
         from pathlib import Path
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
@@ -135,35 +135,56 @@ class SheetsExporter:
         service = build("sheets", "v4", credentials=creds)
         spreadsheet_id = settings.google_sheets_spreadsheet_id
 
-        # Get existing sheet titles
+        # Get existing sheets with their IDs
         sheet_meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-        existing = {s["properties"]["title"] for s in sheet_meta.get("sheets", [])}
+        existing = {s["properties"]["title"]: s["properties"]["sheetId"]
+                    for s in sheet_meta.get("sheets", [])}
 
-        # Create missing tabs in one batchUpdate
-        requests = []
+        # Create missing tabs
+        create_requests = []
         for tab_name in tab_names:
             if tab_name not in existing:
-                requests.append({"addSheet": {"properties": {"title": tab_name}}})
+                create_requests.append({"addSheet": {"properties": {"title": tab_name}}})
 
-        if requests:
-            service.spreadsheets().batchUpdate(
+        if create_requests:
+            result = service.spreadsheets().batchUpdate(
                 spreadsheetId=spreadsheet_id,
-                body={"requests": requests},
+                body={"requests": create_requests},
             ).execute()
-            logger.info("sheet_tabs_created", count=len(requests))
+            logger.info("sheet_tabs_created", count=len(create_requests))
+            # Refresh sheet metadata after creation
+            sheet_meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+            existing = {s["properties"]["title"]: s["properties"]["sheetId"]
+                        for s in sheet_meta.get("sheets", [])}
 
-        # Clear existing data and write headers to each tab
+        # ── Tab color scheme (RGB 0-1 scale) ──────────────────────────────────
+        # Each tab gets a unique header color for instant visual navigation
+        _TAB_COLORS = {
+            "Startups":           {"red": 0.055, "green": 0.647, "blue": 0.914},   # cyan
+            "Products":           {"red": 0.988, "green": 0.604, "blue": 0.094},   # orange
+            "Papers":             {"red": 0.545, "green": 0.361, "blue": 0.965},   # purple
+            "Jobs":               {"red": 0.133, "green": 0.773, "blue": 0.369},   # green
+            "News":               {"red": 0.988, "green": 0.318, "blue": 0.318},   # red
+            "Entity Mapping Log": {"red": 0.392, "green": 0.392, "blue": 0.392},   # grey
+        }
+        _WHITE = {"red": 1.0, "green": 1.0, "blue": 1.0}
+        _DARK  = {"red": 0.051, "green": 0.071, "blue": 0.090}  # #0D1217
+
+        # Clear data, write headers, and format each tab
         for tab_name in tab_names:
             tab_headers = headers.get(tab_name, [])
             if not tab_headers:
                 continue
+            sheet_id = existing.get(tab_name)
+
             try:
-                # Clear the tab first (avoids duplicate rows on re-run)
+                # 1. Clear existing data
                 service.spreadsheets().values().clear(
                     spreadsheetId=spreadsheet_id,
-                    range=f"{tab_name}!A:Z",
+                    range=f"{tab_name}!A:ZZ",
                 ).execute()
-                # Write header row
+
+                # 2. Write header row
                 service.spreadsheets().values().update(
                     spreadsheetId=spreadsheet_id,
                     range=f"{tab_name}!A1",
@@ -171,8 +192,94 @@ class SheetsExporter:
                     body={"values": [tab_headers]},
                 ).execute()
                 logger.info("sheet_header_written", tab=tab_name)
+
+                # 3. Apply rich formatting via batchUpdate
+                if sheet_id is not None:
+                    header_color = _TAB_COLORS.get(tab_name, _DARK)
+                    num_cols = len(tab_headers)
+
+                    fmt_requests = [
+                        # ── Bold + colored background + white text on header row ──
+                        {
+                            "repeatCell": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "startRowIndex": 0,
+                                    "endRowIndex": 1,
+                                    "startColumnIndex": 0,
+                                    "endColumnIndex": num_cols,
+                                },
+                                "cell": {
+                                    "userEnteredFormat": {
+                                        "backgroundColor": header_color,
+                                        "textFormat": {
+                                            "bold": True,
+                                            "foregroundColor": _WHITE,
+                                            "fontSize": 11,
+                                            "fontFamily": "Google Sans",
+                                        },
+                                        "horizontalAlignment": "CENTER",
+                                        "verticalAlignment": "MIDDLE",
+                                        "wrapStrategy": "CLIP",
+                                    }
+                                },
+                                "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+                            }
+                        },
+                        # ── Freeze the header row ──────────────────────────────
+                        {
+                            "updateSheetProperties": {
+                                "properties": {
+                                    "sheetId": sheet_id,
+                                    "gridProperties": {"frozenRowCount": 1},
+                                },
+                                "fields": "gridProperties.frozenRowCount",
+                            }
+                        },
+                        # ── Auto-resize all columns ───────────────────────────
+                        {
+                            "autoResizeDimensions": {
+                                "dimensions": {
+                                    "sheetId": sheet_id,
+                                    "dimension": "COLUMNS",
+                                    "startIndex": 0,
+                                    "endIndex": num_cols,
+                                }
+                            }
+                        },
+                        # ── Light alternating row colors (data rows) ──────────
+                        {
+                            "addBanding": {
+                                "bandedRange": {
+                                    "bandedRangeId": sheet_id * 10 + 1,
+                                    "range": {
+                                        "sheetId": sheet_id,
+                                        "startRowIndex": 1,
+                                        "startColumnIndex": 0,
+                                        "endColumnIndex": num_cols,
+                                    },
+                                    "rowProperties": {
+                                        "headerColor": header_color,
+                                        "firstBandColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                                        "secondBandColor": {"red": 0.961, "green": 0.969, "blue": 0.980},
+                                    },
+                                }
+                            }
+                        },
+                    ]
+                    try:
+                        service.spreadsheets().batchUpdate(
+                            spreadsheetId=spreadsheet_id,
+                            body={"requests": fmt_requests},
+                        ).execute()
+                        logger.info("sheet_formatted", tab=tab_name)
+                    except Exception as fmt_err:
+                        # Banding may fail if already applied — non-fatal
+                        logger.debug("sheet_format_partial", tab=tab_name, error=str(fmt_err)[:60])
+
             except Exception as e:
                 logger.warning("sheet_header_failed", tab=tab_name, error=str(e))
+
 
     async def _export_type(self, record_type: str, tab_name: str) -> int:
         """Export all exportable records of a given type."""
