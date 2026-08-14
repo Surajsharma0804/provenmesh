@@ -8,7 +8,7 @@ echo.
 
 :: ── Step 1: Start Docker infrastructure ──────────────────────────────────────
 echo [1/3] Starting Docker (Postgres + Redis + MinIO)...
-docker compose up -d
+docker compose up -d postgres redis minio minio-init
 if %errorlevel% neq 0 (
     echo.
     echo  ERROR: Docker failed to start.

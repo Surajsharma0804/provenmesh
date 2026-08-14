@@ -87,6 +87,7 @@ services:
 
   # ─── Workers ────────────────────────────────────────────────────
   crawler-worker:
+    profiles: [workers]   # Only starts with: docker compose --profile workers up -d
     build:
       context: .
       dockerfile: Dockerfile
@@ -114,6 +115,7 @@ services:
     restart: unless-stopped
 
   extraction-worker:
+    profiles: [workers]
     build:
       context: .
       dockerfile: Dockerfile
@@ -141,6 +143,7 @@ services:
     restart: unless-stopped
 
   resolver-worker:
+    profiles: [workers]
     build:
       context: .
       dockerfile: Dockerfile
@@ -164,6 +167,7 @@ services:
     restart: unless-stopped
 
   export-worker:
+    profiles: [workers]
     build:
       context: .
       dockerfile: Dockerfile
