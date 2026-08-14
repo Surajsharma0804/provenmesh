@@ -28,7 +28,6 @@ from provenmesh.extraction.providers.base import (
     LLMResponse,
     RateLimitError,
 )
-from provenmesh.extraction.providers.deepseek import DeepSeekProvider
 from provenmesh.extraction.providers.gemini import GeminiProvider
 from provenmesh.extraction.providers.groq import GroqProvider
 from provenmesh.extraction.providers.openrouter import OpenRouterProvider
@@ -329,7 +328,11 @@ class ExtractionOrchestrator:  # pragma: no cover
             fields["title"] = field(title)
         if authors_raw:
             # May be comma or semicolon separated
-            fields["authors"] = [field(a.strip()) for a in re.split(r"[,;]", authors_raw) if a.strip()]
+            fields["authors"] = [
+                field(a.strip())
+                for a in re.split(r"[,;]", authors_raw)
+                if a.strip()
+            ]
         if abstract:
             fields["abstract"] = field(abstract[:500])
         if published:
@@ -342,7 +345,11 @@ class ExtractionOrchestrator:  # pragma: no cover
             fields["website"] = field(source_url)
 
         if fields:
-            logger.info("arxiv_rule_extracted", arxiv_id=arxiv_id, title=title[:50] if title else "")
+            logger.info(
+                "arxiv_rule_extracted",
+                arxiv_id=arxiv_id,
+                title=title[:50] if title else "",
+            )
 
         return fields
 

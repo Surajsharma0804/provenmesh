@@ -50,7 +50,7 @@ class SheetsExporter:
             "NEWS_SIGNAL": "News",
         }
 
-        TAB_HEADERS = {
+        tab_headers_map = {
             "Startups": [
                 "Canonical ID", "Company Name", "Type", "Status", "Source URL",
                 "Description", "Founded Date", "Founders", "HQ",
@@ -85,8 +85,8 @@ class SheetsExporter:
         }
 
         # Setup: create all tabs and write headers (clears old data first)
-        all_tabs = list(type_tab_map.values()) + ["Entity Mapping Log"]
-        await self._setup_tabs(all_tabs, TAB_HEADERS)
+        all_tabs = [*type_tab_map.values(), "Entity Mapping Log"]
+        await self._setup_tabs(all_tabs, tab_headers_map)
 
         for record_type, tab_name in type_tab_map.items():
             try:
@@ -115,8 +115,10 @@ class SheetsExporter:
     ) -> None:
         """Create all tabs if missing, write headers, and apply rich formatting."""
         from pathlib import Path
+
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
+
         from provenmesh.config.settings import PROJECT_ROOT, get_settings
 
         settings = get_settings()
@@ -229,7 +231,7 @@ class SheetsExporter:
                                     "deleteBanding": {"bandedRangeId": br["bandedRangeId"]}
                                 })
                 except Exception:
-                    pass
+                    logger.debug("sheet_get_banding_failed", tab=tab_name)
 
                 service.spreadsheets().batchUpdate(
                     spreadsheetId=spreadsheet_id,
@@ -283,7 +285,11 @@ class SheetsExporter:
                                     "wrapStrategy": "CLIP",
                                 }
                             },
-                            "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+                            "fields": (
+                                "userEnteredFormat("
+                                "backgroundColor,textFormat,"
+                                "horizontalAlignment,verticalAlignment,wrapStrategy)"
+                            ),
                         }
                     },
                     # Data rows: plain white background, left-aligned, no wrap
@@ -307,7 +313,11 @@ class SheetsExporter:
                                     "wrapStrategy": "CLIP",
                                 }
                             },
-                            "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+                            "fields": (
+                                "userEnteredFormat("
+                                "backgroundColor,textFormat,"
+                                "horizontalAlignment,verticalAlignment,wrapStrategy)"
+                            ),
                         }
                     },
                     # Row height for data rows (compact: 21px)
@@ -345,7 +355,8 @@ class SheetsExporter:
                             "fields": "gridProperties.frozenRowCount",
                         }
                     },
-                ] + col_width_requests
+                ]
+                fmt_requests.extend(col_width_requests)
 
                 service.spreadsheets().batchUpdate(
                     spreadsheetId=spreadsheet_id,
@@ -499,6 +510,7 @@ class SheetsExporter:
 
             from google.oauth2.service_account import Credentials
             from googleapiclient.discovery import build
+
             from provenmesh.config.settings import PROJECT_ROOT
 
             creds_path = settings.google_sheets_credentials_json
