@@ -183,13 +183,15 @@ class ExtractionOrchestrator:  # pragma: no cover
         if not reserved:
             return {"fields": {}, "relationships": [], "error": "budget_exhausted"}
 
-        # ── Rule-based pre-extraction for ArXiv (no LLM needed) ──────────────
-        # ArXiv pages have structured HTML metadata we can parse directly.
-        # This guarantees papers always have real titles/authors even when
-        # all LLM providers are exhausted by rate limits.
+# ── Rule-based pre-extraction (no LLM needed) ──────────────────────────
+        # ArXiv: structured meta tags give us full paper data.
+        # All other URLs: og:/meta tags give us at least title+description.
+        # Both run before any LLM call so we always have SOMETHING to save.
         rule_fields: dict = {}
         if record_type == "PAPER" and "arxiv.org" in source_url:
             rule_fields = self._extract_arxiv_metadata(html_content, source_url)
+        else:
+            rule_fields = self._extract_html_metadata(html_content, source_url)
 
         # Extract main content and chunk
         main_text = extract_main_content(html_content)
@@ -353,6 +355,109 @@ class ExtractionOrchestrator:  # pragma: no cover
 
         return fields
 
+
+    def _extract_html_metadata(
+        self, html_content: str, source_url: str
+    ) -> dict:
+        """Extract basic metadata from any HTML page via og:/meta tags.
+
+        Used as a universal fallback when all LLM providers are exhausted.
+        Guarantees Startups/Products/News/Jobs always have at least a name
+        and source URL saved, even during full provider outages.
+        """
+        import re
+        from html.parser import HTMLParser
+
+        class _BasicParser(HTMLParser):
+            def __init__(self) -> None:
+                super().__init__()
+                self.meta: dict[str, str] = {}
+                self._in_title = False
+                self.page_title = ""
+
+            def handle_starttag(self, tag: str, attrs: list) -> None:
+                attr_dict = dict(attrs)
+                if tag == "meta":
+                    # og: properties
+                    prop = attr_dict.get("property", "").lower()
+                    name = attr_dict.get("name", "").lower()
+                    content = attr_dict.get("content", "")
+                    key = prop or name
+                    if key and content:
+                        self.meta[key] = content
+                if tag == "title":
+                    self._in_title = True
+
+            def handle_endtag(self, tag: str) -> None:
+                if tag == "title":
+                    self._in_title = False
+
+            def handle_data(self, data: str) -> None:
+                if self._in_title and not self.page_title:
+                    self.page_title = data.strip()
+
+        parser = _BasicParser()
+        parser.feed(html_content[:30000])  # Only parse first 30KB
+        meta = parser.meta
+
+        def field(value: str, evidence: str = "") -> dict:
+            return {"value": value, "evidence": evidence or value, "confidence": 0.70}
+
+        title = (
+            meta.get("og:title", "")
+            or meta.get("twitter:title", "")
+            or meta.get("citation_title", "")
+            or parser.page_title
+        )
+        description = (
+            meta.get("og:description", "")
+            or meta.get("description", "")
+            or meta.get("twitter:description", "")
+        )
+        published = (
+            meta.get("article:published_time", "")
+            or meta.get("article:modified_time", "")
+            or meta.get("citation_date", "")
+            or meta.get("date", "")
+        )
+        author = (
+            meta.get("author", "")
+            or meta.get("article:author", "")
+            or meta.get("citation_author", "")
+        )
+        publisher = meta.get("og:site_name", "")
+
+        # Try to get a clean date from URL patterns like /2024/01/15/
+        if not published:
+            date_match = re.search(r"/(20\d{2})/(\d{2})/(\d{2})/", source_url)
+            if date_match:
+                y, m, d = date_match.groups()
+                published = f"{y}-{m}-{d}"
+
+        fields: dict = {}
+        if title:
+            fields["title"] = field(title)
+            # Use title as the entity name for non-paper types
+            fields["entityName"] = field(title)
+        if description:
+            fields["description"] = field(description[:500])
+        if published:
+            fields["publishedDate"] = field(published)
+        if author:
+            fields["author"] = field(author)
+        if publisher:
+            fields["publisher"] = field(publisher)
+        if source_url:
+            fields["website"] = field(source_url)
+
+        if fields:
+            logger.debug(
+                "html_rule_extracted",
+                url=source_url[:80],
+                title=title[:50] if title else "",
+            )
+
+        return fields
 
 
     async def _call_with_fallback(
