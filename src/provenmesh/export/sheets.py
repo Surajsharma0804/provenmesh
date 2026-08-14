@@ -193,13 +193,16 @@ class SheetsExporter:
                 ).execute()
                 logger.info("sheet_header_written", tab=tab_name)
 
-                # 3. Apply rich formatting via batchUpdate
+                # 3. Apply rich formatting — split into two separate batches
+                #    Batch A: header color + bold + freeze + auto-resize (never fails)
+                #    Batch B: alternating row banding (may fail if already set — OK)
                 if sheet_id is not None:
                     header_color = _TAB_COLORS.get(tab_name, _DARK)
                     num_cols = len(tab_headers)
 
-                    fmt_requests = [
-                        # ── Bold + colored background + white text on header row ──
+                    # ── Batch A: critical formatting (always apply) ────────────
+                    batch_a = [
+                        # Bold white text + colored background on header row
                         {
                             "repeatCell": {
                                 "range": {
@@ -226,7 +229,7 @@ class SheetsExporter:
                                 "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
                             }
                         },
-                        # ── Freeze the header row ──────────────────────────────
+                        # Freeze header row
                         {
                             "updateSheetProperties": {
                                 "properties": {
@@ -236,7 +239,7 @@ class SheetsExporter:
                                 "fields": "gridProperties.frozenRowCount",
                             }
                         },
-                        # ── Auto-resize all columns ───────────────────────────
+                        # Auto-resize columns to fit content
                         {
                             "autoResizeDimensions": {
                                 "dimensions": {
@@ -247,38 +250,45 @@ class SheetsExporter:
                                 }
                             }
                         },
-                        # ── Light alternating row colors (data rows) ──────────
-                        {
-                            "addBanding": {
-                                "bandedRange": {
-                                    "bandedRangeId": sheet_id * 10 + 1,
-                                    "range": {
-                                        "sheetId": sheet_id,
-                                        "startRowIndex": 1,
-                                        "startColumnIndex": 0,
-                                        "endColumnIndex": num_cols,
-                                    },
-                                    "rowProperties": {
-                                        "headerColor": header_color,
-                                        "firstBandColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
-                                        "secondBandColor": {"red": 0.961, "green": 0.969, "blue": 0.980},
-                                    },
-                                }
-                            }
-                        },
                     ]
                     try:
                         service.spreadsheets().batchUpdate(
                             spreadsheetId=spreadsheet_id,
-                            body={"requests": fmt_requests},
+                            body={"requests": batch_a},
                         ).execute()
                         logger.info("sheet_formatted", tab=tab_name)
-                    except Exception as fmt_err:
-                        # Banding may fail if already applied — non-fatal
-                        logger.debug("sheet_format_partial", tab=tab_name, error=str(fmt_err)[:60])
+                    except Exception as fe:
+                        logger.warning("sheet_format_failed", tab=tab_name, error=str(fe)[:80])
+
+                    # ── Batch B: alternating row banding (non-fatal if fails) ──
+                    batch_b = [{
+                        "addBanding": {
+                            "bandedRange": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "startRowIndex": 1,
+                                    "startColumnIndex": 0,
+                                    "endColumnIndex": num_cols,
+                                },
+                                "rowProperties": {
+                                    "headerColor": header_color,
+                                    "firstBandColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                                    "secondBandColor": {"red": 0.953, "green": 0.965, "blue": 0.980},
+                                },
+                            }
+                        }
+                    }]
+                    try:
+                        service.spreadsheets().batchUpdate(
+                            spreadsheetId=spreadsheet_id,
+                            body={"requests": batch_b},
+                        ).execute()
+                    except Exception:
+                        pass  # Already banded — silently skip
 
             except Exception as e:
                 logger.warning("sheet_header_failed", tab=tab_name, error=str(e))
+
 
 
     async def _export_type(self, record_type: str, tab_name: str) -> int:
