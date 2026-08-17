@@ -30,6 +30,7 @@ ENV/
 *.pem
 *.key
 service_account.json
+configs/google_service_account.json
 
 # ─── OS ──────────────────────────────────────────────────────────
 .DS_Store

@@ -60,10 +60,52 @@ verticals:
       - name: arxiv_api
         base_url: "https://export.arxiv.org/api/query"
         api_params:
-          search_query: "cat:cs.AI OR cat:cs.LG OR cat:cs.CL"
+          # ── Core AI / ML ─────────────────────────────────────────────────
+          # cs.AI  Artificial Intelligence
+          # cs.LG  Machine Learning
+          # cs.NE  Neural & Evolutionary Computing (deep learning, GANs, etc.)
+          # stat.ML  Statistical Machine Learning
+          #
+          # ── Language / LLMs / NLP ────────────────────────────────────────
+          # cs.CL  Computation & Language (NLP, LLMs, transformers, RAG)
+          # cs.IR  Information Retrieval (search, recommendation)
+          #
+          # ── Vision / Facial / Motion ─────────────────────────────────────
+          # cs.CV  Computer Vision (facial recognition, object detection)
+          # cs.GR  Graphics (motion synthesis, rendering)
+          # eess.IV  Image & Video Processing
+          #
+          # ── Voice / Speech / Audio ───────────────────────────────────────
+          # cs.SD  Sound (audio generation, music AI)
+          # eess.AS  Audio & Speech Processing (ASR, TTS, speaker ID)
+          # eess.SP  Signal Processing
+          #
+          # ── Robotics / Motion / Autonomous Systems ───────────────────────
+          # cs.RO  Robotics (motion planning, manipulation, navigation)
+          # cs.SY  Systems & Control (autonomous control)
+          # eess.SY  Electrical Eng. Systems & Control
+          #
+          # ── Data Science / Databases ─────────────────────────────────────
+          # cs.DB  Databases (ML for data, data pipelines)
+          #
+          # ── HCI / Multimodal ─────────────────────────────────────────────
+          # cs.HC  Human-Computer Interaction (multimodal AI, UX AI)
+          # cs.MM  Multimedia (video understanding, multimodal models)
+          #
+          # ── Security / Privacy ───────────────────────────────────────────
+          # cs.CR  Cryptography & Security (adversarial, federated learning)
+          search_query: >-
+            cat:cs.AI OR cat:cs.LG OR cat:cs.NE OR cat:stat.ML OR
+            cat:cs.CL OR cat:cs.IR OR
+            cat:cs.CV OR cat:cs.GR OR cat:eess.IV OR
+            cat:cs.SD OR cat:eess.AS OR cat:eess.SP OR
+            cat:cs.RO OR cat:cs.SY OR cat:eess.SY OR
+            cat:cs.DB OR
+            cat:cs.HC OR cat:cs.MM OR
+            cat:cs.CR
           sortBy: submittedDate
           sortOrder: descending
-          max_results: 100
+          max_results: 200
           start: "{offset}"
         fetch_tier: 1              # Structured API, no scraping
         requests_per_second: 3     # arxiv allows higher rate

@@ -157,8 +157,10 @@ def export() -> None:
 @click.option("--crawl-workers", default=2)
 @click.option("--extract-workers", default=2)
 @click.option("--resolve-workers", default=2)
-@click.option("--auto-export", is_flag=True, default=False, help="Auto-export to Google Sheets periodically.")
-@click.option("--export-interval", default=30, help="Auto-export interval in minutes (default: 30).")
+@click.option("--auto-export", is_flag=True, default=False,
+              help="Auto-export to Google Sheets periodically.")
+@click.option("--export-interval", default=30,
+              help="Auto-export interval in minutes (default: 30).")
 def run(
     crawl_workers: int,
     extract_workers: int,

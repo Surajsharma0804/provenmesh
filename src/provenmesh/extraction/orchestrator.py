@@ -30,6 +30,7 @@ from provenmesh.extraction.providers.base import (
 )
 from provenmesh.extraction.providers.gemini import GeminiProvider
 from provenmesh.extraction.providers.groq import GroqProvider
+from provenmesh.extraction.providers.ollama import OllamaProvider
 from provenmesh.extraction.providers.openrouter import OpenRouterProvider
 from provenmesh.observability.logging import get_logger
 from provenmesh.observability.metrics import (
@@ -140,6 +141,7 @@ class ExtractionOrchestrator:  # pragma: no cover
             OpenRouterProvider(                  # Priority 4 - Gemma 4 31B free backup
                 model="google/gemma-4-31b-it:free"
             ),
+            OllamaProvider(model="gemma3:4b"),  # Priority 5 - Local, ZERO rate limits
         ]
         self._circuit_breakers: dict[str, CircuitBreaker] = {
             p.provider_name: CircuitBreaker(

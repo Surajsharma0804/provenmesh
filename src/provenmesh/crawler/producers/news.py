@@ -13,9 +13,8 @@ always shows where each signal came from.
 from __future__ import annotations
 
 import asyncio
-import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import aiohttp
 
@@ -162,7 +161,7 @@ class NewsProducer(BaseProducer):
         Uses https://hn.algolia.com/api — free, no key, returns full URL.
         Each story links directly to the original source article.
         """
-        since_ts = int((datetime.now(timezone.utc) - timedelta(days=days_back)).timestamp())
+        since_ts = int((datetime.now(UTC) - timedelta(days=days_back)).timestamp())
         discovered = 0
         seen: set[str] = set()
 

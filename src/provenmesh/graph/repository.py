@@ -94,7 +94,7 @@ class EntityRepository:
         a real entity_name (not 'None') — papers are often crawled successfully but
         can't get LLM-verified due to ArXiv rate limits, so we show what we have.
         """
-        from sqlalchemy import or_, and_
+        from sqlalchemy import and_, or_
 
         if record_type == "PAPER":
             # For papers: show grounded/partial OR schema-valid with real name

@@ -55,11 +55,20 @@ class ProductProducer(BaseProducer):
                             html = await response.text()
                             urls = self._extract_github_repo_urls(html)
                             for url in urls:
-                                await self._enqueue_url(url, source_name="github_trending", listing_page=0, fetch_tier=1)
+                                await self._enqueue_url(
+                                    url,
+                                    source_name="github_trending",
+                                    listing_page=0,
+                                    fetch_tier=1,
+                                )
                                 discovered += 1
                             logger.info("github_listing_done", source=gh_url, count=len(urls))
                         else:
-                            logger.warning("github_listing_failed", url=gh_url, status=response.status)
+                            logger.warning(
+                                "github_listing_failed",
+                                url=gh_url,
+                                status=response.status,
+                            )
                 except Exception as e:
                     logger.warning("github_fetch_error", url=gh_url, error=str(e))
                 await asyncio.sleep(2)
@@ -69,12 +78,22 @@ class ProductProducer(BaseProducer):
         fetcher = TieredFetcher()
         for page in range(1, 6):
             ph_url = f"https://www.producthunt.com/topics/artificial-intelligence?page={page}"
-            result = await fetcher.fetch(ph_url, source_name="producthunt", record_type=self.record_type, max_tier=2)
+            result = await fetcher.fetch(
+                ph_url,
+                source_name="producthunt",
+                record_type=self.record_type,
+                max_tier=2,
+            )
             if not result.ok:
                 break
             urls = self._extract_producthunt_urls(result.text, ph_url)
             for url in urls:
-                await self._enqueue_url(url, source_name="producthunt", listing_page=page, fetch_tier=2)
+                await self._enqueue_url(
+                    url,
+                    source_name="producthunt",
+                    listing_page=page,
+                    fetch_tier=2,
+                )
                 discovered += 1
             await asyncio.sleep(3)
 
@@ -94,9 +113,8 @@ class ProductProducer(BaseProducer):
         # Also try article-style links
         for link in soup.select("h2 a, h3 a"):
             href = str(link.get("href", ""))
-            if href and "github.com" in href:
-                if href not in urls:
-                    urls.append(href)
+            if href and "github.com" in href and href not in urls:
+                urls.append(href)
         return urls[:100]
 
     def _extract_producthunt_urls(self, html: str, base_url: str) -> list[str]:

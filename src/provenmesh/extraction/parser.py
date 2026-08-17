@@ -42,7 +42,11 @@ def parse_llm_response(raw_response: str) -> dict[str, Any]:
         if isinstance(result, list):
             return {"items": result}
         # Plain string/number returned by model -- not useful
-        logger.warning("llm_response_not_dict", type=type(result).__name__, preview=str(result)[:100])
+        logger.warning(
+            "llm_response_not_dict",
+            type=type(result).__name__,
+            preview=str(result)[:100],
+        )
         return {}
     except json.JSONDecodeError as e:
         logger.warning("llm_response_parse_failed", error=str(e), response_preview=text[:200])

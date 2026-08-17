@@ -1,7 +1,7 @@
 """Startup vertical producer -- discovers ALL AI startup company pages.
 
 Sources (all public, no auth required):
-    1. YC Company Directory — all batches with AI tag (W19–W25, S19–S24)
+    1. YC Company Directory - all batches with AI tag (W19-W25, S19-S24)
     2. Google AI demo companies — public pages
     3. Crunchbase trending — public search API
     4. TechCrunch AI articles — RSS feed (reliable, no JS)
@@ -26,7 +26,11 @@ from provenmesh.observability.logging import get_logger
 logger = get_logger(__name__)
 
 _API_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/125.0.0.0 Safari/537.36"
+    ),
     "Accept": "text/html,application/xhtml+xml,*/*",
     "Accept-Language": "en-US,en;q=0.9",
 }
@@ -169,8 +173,14 @@ class StartupProducer(BaseProducer):
                                     source=yc_url,
                                     count=len(companies),
                                 )
-                            except Exception:
-                                pass
+                            except Exception as parse_err:
+                                # JSON parse failure — log and skip,
+                                # the outer HTML fallback is not needed here
+                                logger.debug(
+                                    "yc_json_parse_skipped",
+                                    url=yc_url,
+                                    error=str(parse_err)[:80],
+                                )
                         else:
                             logger.warning(
                                 "yc_api_failed",
@@ -207,10 +217,12 @@ class StartupProducer(BaseProducer):
                             feed = feedparser.parse(text)
                             for entry in feed.entries[:50]:
                                 link = entry.get("link", "")
-                                if link and any(
-                                    kw in (entry.get("title", "") + entry.get("summary", "")).lower()
-                                    for kw in ["startup", "ai ", "raises", "funding", "launch"]
-                                ):
+                                title_body = (
+                                    entry.get("title", "")
+                                    + entry.get("summary", "")
+                                ).lower()
+                                _kws = ["startup", "ai ", "raises", "funding", "launch"]
+                                if link and any(kw in title_body for kw in _kws):
                                     await self._enqueue_url(
                                         link,
                                         source_name=source_name,
