@@ -29,18 +29,23 @@ _API_HEADERS = {
     "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
 }
 
-# ─── 20+ RSS Feeds — every major AI news outlet ──────────────────────────────
+# ─── 35+ RSS Feeds — every major AI news outlet ──────────────────────────────
 _RSS_FEEDS = [
     # ── Primary tech/AI news ──────────────────────────────────────────────────
     ("https://techcrunch.com/category/artificial-intelligence/feed/", "techcrunch_ai"),
     ("https://feeds.feedburner.com/venturebeat/SZYF",                 "venturebeat_ai"),
     ("https://www.theverge.com/rss/index.xml",                        "theverge"),
+    ("https://www.zdnet.com/topic/artificial-intelligence/rss.xml",   "zdnet_ai"),
+    ("https://www.infoworld.com/category/artificial-intelligence/index.rss", "infoworld_ai"),
+    ("https://feeds.arstechnica.com/arstechnica/index",               "arstechnica"),
+    ("https://www.computerworld.com/feed/",                           "computerworld"),
 
     # ── ArXiv — AI / ML / NLP / CV ───────────────────────────────────────────
     ("https://rss.arxiv.org/rss/cs.AI",                               "arxiv_ai"),
     ("https://rss.arxiv.org/rss/cs.LG",                               "arxiv_ml"),
     ("https://rss.arxiv.org/rss/cs.CL",                               "arxiv_nlp"),
     ("https://rss.arxiv.org/rss/cs.CV",                               "arxiv_cv"),
+    ("https://rss.arxiv.org/rss/cs.RO",                               "arxiv_robotics"),
 
     # ── Dedicated AI publications ─────────────────────────────────────────────
     ("https://www.artificialintelligence-news.com/feed/",             "ai_news"),
@@ -49,6 +54,10 @@ _RSS_FEEDS = [
     ("https://www.deeplearning.ai/the-batch/feed/",                    "deeplearning_batch"),
     ("https://import.ai/feed/",                                        "import_ai"),
     ("https://huggingface.co/blog/feed.xml",                          "huggingface_blog"),
+    ("https://newsletter.theaiedge.io/feed",                          "ai_edge"),
+    ("https://www.therundown.ai/rss",                                 "therundown_ai"),
+    ("https://www.bensbites.co/feed",                                 "bensbites"),
+    ("https://www.exponentialview.co/feed",                           "exponential_view"),
 
     # ── Lab / company blogs ───────────────────────────────────────────────────
     ("https://deepmind.google/blog/rss.xml",                          "deepmind_blog"),
@@ -57,11 +66,15 @@ _RSS_FEEDS = [
     ("https://ai.googleblog.com/feeds/posts/default",                 "google_ai_blog"),
     ("https://blogs.microsoft.com/ai/feed/",                          "microsoft_ai"),
     ("https://stability.ai/news/rss.xml",                             "stability_ai"),
+    ("https://mistral.ai/news/rss.xml",                               "mistral_blog"),
+    ("https://cohere.com/blog/rss",                                   "cohere_blog"),
 
     # ── Business / funding ───────────────────────────────────────────────────
     ("https://news.ycombinator.com/rss",                              "hackernews"),
     ("https://feeds.feedburner.com/crunchbase-news",                  "crunchbase_news"),
     ("https://sifted.eu/feed/",                                        "sifted_eu"),
+    ("https://www.eu-startups.com/feed/",                             "eu_startups"),
+    ("https://techfundingnews.com/feed/",                             "tech_funding_news"),
 
     # ── Wired + MIT Tech Review ───────────────────────────────────────────────
     ("https://www.wired.com/feed/category/artificial-intelligence/latest/rss", "wired_ai"),
@@ -73,6 +86,8 @@ _HN_AI_TERMS = [
     "LLM", "GPT", "AI startup", "machine learning", "deep learning",
     "Anthropic", "OpenAI", "Gemini", "Claude", "artificial intelligence",
     "foundation model", "neural network", "transformer", "diffusion model",
+    "Mistral", "Llama", "RAG", "vector database", "AI funding",
+    "generative AI", "multimodal", "autonomous agent", "AI safety",
 ]
 
 
