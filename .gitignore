@@ -52,3 +52,12 @@ docker-compose.override.yml
 *.sqlite3
 data/
 logs/
+
+# ─── Temp / scratch files ───────────────────────────────────────
+coverage_audit.txt
+coverage_final.txt
+final_count.txt
+test_results.txt
+ruff_audit.json
+ruff_full.txt
+*.log
